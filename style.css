@@ -17,7 +17,6 @@ form{
     color: white;
 }
 
-
 canvas{
     position: absolute;
     top: 0px;
@@ -25,4 +24,8 @@ canvas{
     right: 0px;
     bottom: 0px;
     margin: auto;
+}
+
+body{
+    background-color: gray;
 }
