@@ -1,0 +1,28 @@
+.leaderboard{
+    position: absolute;
+    z-index: 1;
+    left: 30%;
+    bottom: 50%;
+    background-color: black;
+    width: 250px;
+    text-decoration: white;
+    display: none;
+}
+
+h2{
+    color: white;
+}
+
+form{
+    color: white;
+}
+
+
+canvas{
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+    margin: auto;
+}
