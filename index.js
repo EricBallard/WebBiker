@@ -5,21 +5,14 @@ c.width = 500;
 c.height = 350;
 document.body.appendChild(c);
 
-/*
-    Credits: k3dev
-    https://www.youtube.com/watch?v=MW8HcwHK1S0
 
-    TODO:
-    Research Math class; #floor, #cost, #ceil
-*/
 
-// Terrain generation
+// Terrain generation | Credits: k3dev (https://www.youtube.com/watch?v=MW8HcwHK1S0)
 var perm = [];
 while (perm.length < 255) {
     while (perm.includes(val = Math.floor(Math.random() * 255)));
     perm.push(val);
 }
-
 var lerp = (a,b,t) => a + (b - a) * (1 - Math.cos(t * Math.PI)) / 2;
 
 var noise = x => {
@@ -27,132 +20,230 @@ var noise = x => {
     return lerp(perm[Math.floor(x)], perm[Math.ceil(x)], x - Math.floor(x));
 }
 
-var grounded = false;
+// Particle object
+function Particle(px, py) {
+    this.x = px;
+    this.y = py;
+  }
 
-// Player object
+// Player 
 var player = new function() {
     // Position
     this.x = c.width / 2, this.y = 0;
+    this.grounded = false;
 
     // Velocity
     this.xSpeed = 0; this.ySpeed = 0
     this.rotation = 0,  this.rotationSpeed = 0;
 
-    // Biker image
+    // Player image
     this.img = new Image();
-    this.img.src = "/resources/biker.png";
+    this.img.src = '/resources/biker.png';
+
+    // Crash
+    this.imgBiker = null;
+    this.particles = new Array();
 
     this.draw = function() {
-        // Rear whhel
-         var p1 = c.height - (t < 45 ? 150 : t < 50 ? 150 - (50 - t) : noise(t + this.x) * 0.25);
-        
-         // Front wheel
-         var p2 =  c.height - (t < 45 ? 150 : t < 50 ? 150 - (50 - t)  : noise(t + 5 + this.x) * 0.25);
+        const disMultiplier = (distanceTraveled / 5000);
 
+        var frontWheel =  c.height - (distanceTraveled < 595 ? 250 : distanceTraveled < 604 ?
+            250 - (604 - distanceTraveled)  : noise(distanceTraveled + 5 + this.x)  * (0.25  * (disMultiplier < 1 ? 1 : disMultiplier)));
 
-        if (p1 - 15 > this.y) {
+        var rearWheel =  c.height - (distanceTraveled < 595 ? 250 : distanceTraveled < 604 ?
+            250 - (604 - distanceTraveled)  : noise(distanceTraveled + this.x)  * (0.25  * (disMultiplier < 1 ? 1 : disMultiplier)));
+
+         // Analayze if player is on ground or in air
+        if (rearWheel - 15 > this.y) {
             this.ySpeed += 0.1;
-            grounded = false;
+            this.grounded = false;
         } else {
-            this.ySpeed -= this.y - (p1 - 15);
-            this.y = p1 - 15;
-            grounded = true;
+            this.ySpeed -= this.y - (rearWheel - 15);
+            this.y = rearWheel - 15;
+            this.grounded = true;
         }
 
         // If game is over, player is idling and touching start wall, or has crashed
-        if (gameOver
-            || ((t > 50 && t < 60) && grounded && speed < 0.009)
-            || grounded && Math.abs(this.rotation) > Math.PI * 0.5) {
-            //var leaderboard = document.getElementById('leaderboard');
-             // leaderboard.style.display = 'block';
+        if (gameOver || distanceTraveled < -250
+            || this.grounded && Math.abs(this.rotation) > Math.PI * 0.5
+            || ((distanceTraveled > runwayLength && distanceTraveled < runwayLength + 10) && this.grounded && this.xSpeed < 0.009)) {
 
-           // console.log('game over: ' + leaderboard);
+            // Rotate and position according to speed
+            this.rotationSpeed = this.rotation > 0.5 ? (this.xSpeed - (this.xSpeed * 2)) : this.xSpeed;
+            this.x -= this.xSpeed * 2.5;
+
+            if (!gameOver) {
+                // Game has just ended - show leaderboard and spawn wreckage
+                var leaderboard = document.getElementById('leaderboard');
+                leaderboard.style.display = 'block';
+                
+                // Split rider/bike sprite into 2 for crash animation 
+                this.img.src = '/resources/bike_alacarte.png';
+
+                // Pick random fall image
+                this.imgBiker = new Image();
+                this.imgBiker.src = '/resources/biker_fall_' + Math.round(Math.random()) +'.png';
+
+                // Determine which side to draw player on relavent to rotation
+                crashOffset = this.rotation > 0.5 ? 10 : -10;
+
+                // Reset controls
+                controls.Up = 0;
+                controls.Down = 0;
+
+                // Spawn particle effect
+                const particlesToSpawn = Math.floor(Math.random() * 6) + 4;
+                
+                for (var particle = 0; particle < particlesToSpawn; particle++) {
+                    const seed = (Math.random() * 10);
+                    const px = (Math.floor(Math.random()) == 1 ? seed : seed - (seed * 2));
+                    const py = (Math.floor(Math.random()) == 1 ? seed : seed - (seed * 2));
+
+                    this.particles[particle] = new Particle(this.x + px, this.y + py);
+                }
+
+                console.log('Particles Spawned: ' + particlesToSpawn);
+            }
+
+            // Declare game is over - player has crashed or gone out of bounds
             gameOver = true;
-            this.rotationSpeed = 0;
-            k.ArrowUp = 0;
-            this.x -= speed * 2.5;
         }
 
-        var angle = Math.atan2((p2 - 15) - this.y, (this.x + 5) - this.x);
+        // Calculate player rotation and speed
+        var angle = Math.atan2((frontWheel - 15) - this.y, (this.x + 5) - this.x);
         this.y += this.ySpeed;
 
-        if (grounded && !gameOver) {
+        if (this.grounded && !gameOver) {
             this.rotation -= (this.rotation - angle) * 0.5;
             this.rotationSpeed =  this.rotationSpeed - (angle - this.rotation);
         }
 
-        this.rotationSpeed +=  (t < 50 && t > 45) ? -0.05 : (k.ArrowLeft - k.ArrowRight) * 0.05;
+        this.rotationSpeed +=  (distanceTraveled < runwayLength + 5 && distanceTraveled > runwayLength - 5)
+        ? -0.05 : (controls.Left - controls.Right) * 0.05;
+
         this.rotation -= this.rotationSpeed * 0.1;
 
+        // Normalize rotation
         if (this.rotation > Math.PI) this.rotation = -Math.PI;
         if (this.rotation < -Math.PI) this.rotation = Math.PI;
 
+        // Draw to graphics
+
+        if (this.imgBiker != null) {
+             // Draw biker in crash
+            ctx.save();
+            ctx.translate(this.x + crashOffset, this.y);
+
+            // Calculate biker rotation randomly
+            ctx.rotate(this.rotation);
+
+            ctx.drawImage(this.imgBiker, -15, -15, 20, 20);
+            ctx.restore();
+        }
+
+        // Draw player
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.rotation);
+
         ctx.drawImage(this.img, -15, -15, 30, 30);
         ctx.restore();
+
+
+        // Draw particles
+        const numbOfParticles = this.particles.length;
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'blue';
+
+        ctx.beginPath();
+        for (let i = 0; i < numbOfParticles; i++) {
+            var particle = this.particles[i];
+            ctx.arc(particle.x, particle.y, 2.5, 0, 1.5 * Math.PI, false);
+            particle.x -= this.xSpeed * 2.5;
+        }
+        ctx.stroke();
     }
 }
 
-var distance = 0;
-var t = 0;
-var speed = 0;
+// Player control object - tracks status of button press
+var controls = {Up:0, Down:0, Left:0, Right:0};
+
+function updateKey(key, status) {
+    if (!gameOver) {
+        switch(key){
+            case "ArrowUp":
+                controls.Up = status;
+                break;
+            case "ArrowDown":
+                controls.Down = status;
+                break;
+             case 'ArrowLeft':
+                controls.Left = status;
+                break;
+            case 'ArrowRight':
+                controls.Right = status;
+                break;
+        }
+    }
+}
+
+onkeydown = e => { updateKey(e.key, 1) };
+onkeyup = e => { updateKey(e.key, 0) };
+
+// Game statistics
+const runwayLength = 600;
+var distanceTraveled = 0;
+var crashOffset = 0;
+
 var gameOver = false;
-var k = {ArrowUp:0, ArrowDown:0, ArrowLeft:0, ArrowRight:0};
 
+// Game go brr
 function loop() {
-    if (!gameOver || speed > 0.015) {
-        speed -= (speed - (grounded || speed > 0.15 ? k.ArrowUp - (grounded ? k.ArrowDown : 0) : 0)) * 0.015;
-        t += 10 * speed;
+    if (!gameOver || player.xSpeed > 0.015) {
+        // Calculate players speed and relative distance traveled
+        const speedMultiplier = (player.grounded || player.xSpeed  > 0.15 ? controls.Up - (player.grounded ? controls.Down : 0) : 0)
+        player.xSpeed  -= (player.xSpeed  - speedMultiplier) * 0.015;
+        distanceTraveled += 10 * player.xSpeed ;
 
-        ctx.fillStyle ='#19f';
-        ctx.fillRect(0, 0 , c.width, c.height);
+        // Canvas background
+        ctx.fillStyle ='#666699';
+        ctx.fillRect(0, 0 , c.width, c.height);  
 
+        // Canvas border
         ctx.lineWidth = 10;
         ctx.strokeStyle = 'black';
         ctx.strokeRect(0, 0, c.width, c.height);
 
+        // Init terrain generation
         ctx.fillStyle = 'black';
         ctx.beginPath();
         ctx.moveTo(0, c.height);
 
+        // Generate terrain
         for (let drawX = 0; drawX < c.width; drawX++) {
-            const disX = t + drawX;
-            const seed = disX < 300 ? 200 : c.height - noise(disX) * 0.25;
+            const disX = distanceTraveled + drawX;
+            const disMultiplier = (distanceTraveled / 5000);
+            const seed = disX < runwayLength * 1.42 ? 100 : c.height - noise(disX)
+                 * (0.25  * (disMultiplier < 1 ? 1 : disMultiplier));
+
             ctx.lineTo(drawX, seed);
         }
 
-         // Calculate pos and draw
-        player.draw();
-
+        // Draw terrain
         ctx.lineTo(c.width, c.height);
         ctx.fill();
-    }
 
-    /*
-        Debug Text
-    */
-   ctx.fillText('Speed: ' + speed, 50, 50);
-   ctx.fillText('Distance: ' + distance, 50, 70);
-   ctx.fillText('X: ' + player.x, 50, 90);
-   ctx.fillText('Y: ' + player.y, 50, 130);
-   ctx.fillText('T: ' + t, 50, 110);
+         // Calculate players position and draw
+        player.draw();
+
+        const traveled = (distanceTraveled - 50);
+        ctx.fillText('Score: ' + (traveled < 0 ? 0 : Math.round(traveled)), 50, 50)
+    }
 
     // Update canvas
     requestAnimationFrame(loop);
 }
 
-/*
-    Register player controls 
-*/
-function updateKey(key, status) {
-    if (!gameOver)
-       k[key] = status;
-}
-
-onkeydown = d => { updateKey(d.key, 1) };
-onkeyup = d => { updateKey(d.key, 0) };
 
 // It's alive!
 loop();
