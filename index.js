@@ -21,8 +21,18 @@ var noise = x => {
 
 // Player 
 var player = new function() {
+    // Exhaust fumes
+    function Particle(ps, px, py) {
+        this.size = ps;
+        this.x = px;
+        this.y = py;
+    }
+
+    this.fumes = new Array();
+
     // Position
     this.x = c.width / 2, this.y = 0;
+    this.doingTrick = false;
     this.grounded = false;
 
     // Velocity
@@ -38,7 +48,7 @@ var player = new function() {
 
     this.update = function() {
         // Calculate player position
-        const disMultiplier = (distanceTraveled / 5000);
+        const disMultiplier = (distanceTraveled / 15000);
         var rearWheel =  c.height - (distanceTraveled < 595 ? 250 : distanceTraveled < 604 ?
             250 - (604 - distanceTraveled)  : noise(distanceTraveled + 5 + this.x)  * (0.25  * (disMultiplier < 1 ? 1 : disMultiplier)));
 
@@ -47,7 +57,7 @@ var player = new function() {
 
         // Simulate road vibration while accelerating
         if (controls.Up == 1 && controls.Left == 0 && controls.Right == 0)
-        frontWheel += Math.round(Math.random()) == 1 ? ((Math.random() * 20) / 100) + 0.1 : 0;
+             frontWheel += Math.round(Math.random()) == 1 ? ((Math.random() * 20) / 100) + 0.1 : 0;
 
          // Analayze if player is on ground or in air
         if (frontWheel - 15 > this.y) {
@@ -59,25 +69,77 @@ var player = new function() {
             this.grounded = true;
         }
 
-        // Burn/decrease gas
-        if (player.grounded && gasoline > 0 && controls.Up == 1 && Math.round(distanceTraveled - runwayLength) > 0)
-            gasoline -= 1;
+        var crashed = false;
 
-        const outOfGas = gameOver ? false : gasoline < 1 && this.grounded && this.xSpeed < 0.015;
+          // Perform stunt trick or init crash
+        if (this.doingTrick) {
+            if (this.grounded) {
+                crashed = true;
+            } else if(controls.Trick == 0) {
+                this.img.src = '/resources/biker.png';
+                this.doingTrick = false;
+            }
+        } else if (!this.grounded) {
+            if(controls.Trick == 1) {
+                this.img.src = '/resources/biker_trick.png';
+                this.doingTrick = true;
+            }
+        }
+
+
+        // Burn/decrease gas + spawn exhaust fumes
+        const accelerating = gasoline > 0 && controls.Up == 1;
+
+        if (accelerating && this.fumes.length < random(8, 16 * (this.xSpeed + 1))) {
+            const fumesToSpawn = random(8, 16);
+            var fumeSize = this.fumes.length;
+
+            for (let spawn = 0; spawn < fumesToSpawn; spawn++) {
+                var rotOff = ((this.rotation + 1) * 100);
+
+                var px = this.x, py = this.y + random(-2, 2);
+
+                 if (rotOff > 0 && rotOff < 90) {
+                    // Bike is rotated between 9-12 o'clock
+                    px -= random(25, 75);
+                    py += random(5, 10);
+                } else if (rotOff > 140) {
+                    px -= random(25, 75);
+                    py -= random(10, 20);
+                } else if (rotOff < -110) {
+                    // Bike is 6-9 o'clock
+                    px += random(25, 75)
+                } else if (rotOff < -10) {
+                    px = this.x + random(-2, 2);
+                    py += random(5, 10);
+                } else {
+                    px -= random(25, 75);
+                }
+
+
+                this.fumes[fumeSize + spawn] = new Particle(Math.random() * (player.grounded ? 2 : 1), px, py);
+                fumeSize += 1;
+            }
+        }
+
+        if (accelerating && player.grounded && Math.round(distanceTraveled - runwayLength) > 0)
+            gasoline = gasoline - 0.75 < 0 ? 0 : gasoline - 0.75;
         
         // If game is over, player runs out of gas, player is idling and touching start wall, or has crashed
-        if (gameOver || outOfGas || distanceTraveled < -250
+        const outOfGas = gameOver || crashed ? false : gasoline < 1 && this.grounded && this.xSpeed < 0.015;
+
+        if (gameOver || crashed || outOfGas || distanceTraveled < -250
             || this.grounded && Math.abs(this.rotation) > Math.PI * 0.5
             || ((distanceTraveled > runwayLength && distanceTraveled < runwayLength + 10) && this.grounded && this.xSpeed < 0.009)) {
+
+            // Reset controls
+            controls.Up = 0;
+            controls.Down = 0;
 
             if (!gameOver) {
                 // Game has just ended - show leaderboard and spawn wreckage
                 var leaderboard = document.getElementById('leaderboard');
                 leaderboard.style.display = 'block';
-                
-                // Reset controls
-                controls.Up = 0;
-                controls.Down = 0;
 
                 if (!outOfGas) {
                     // Split rider/bike sprite into 2 for crash animation 
@@ -180,6 +242,7 @@ var gameOver = false;
 function loop() {
     if (!gameOver || (player.grounded && player.xSpeed > 0.015)) {
         // Calculate players speed and relative distance traveled
+        const disMultiplier = (distanceTraveled / 15000);
         const speedMultiplier = (player.grounded || player.xSpeed  > 0.15 ? controls.Up - (player.grounded ? controls.Down : 0) : 0)
         player.xSpeed  -= (player.xSpeed  - speedMultiplier) * 0.015;
         distanceTraveled += 10 * player.xSpeed ;
@@ -190,11 +253,6 @@ function loop() {
         // Canvas background
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0 , c.width, c.height);  
-
-        // Canvas border
-        ctx.lineWidth = 10;
-        ctx.strokeStyle = 'black';
-        ctx.strokeRect(0, 0, c.width, c.height);
 
         // Spawn clouds + jerry cans
         const laps = distanceTraveled / c.width;
@@ -207,15 +265,15 @@ function loop() {
         if (noClouds || cloudSeed < laps)  {
             // Spawn jerry cans
             if (!noClouds) {
-                const spawnCan = gasoline / 25 < random(0, 2);
+                const spawnCan = gasoline / 25 < random(-1, 4) ;
                 
                 if (spawnCan) {
                     // Spawn random jerry can
                     var canImg = new Image();
                     canImg.src = '/resources/jerrycan.png';
                         
+                    jerryCans[canCount] = new GameObject(false, canImg, 0,  c.width, random(50 / disMultiplier, c.height / 2), 30, 30);
                     canCount += 1;
-                    jerryCans[canCount] = new GameObject(false, canImg, 0,  c.width, random(50, c.height / 2), 30, 30);
                 }
             }
 
@@ -232,8 +290,8 @@ function loop() {
                 const cWidth = random(0, 100) + 50;
                 const cHeight = random(0, 25) + 25;
 
-                cloudCount += 1;
                 clouds[cloudCount] = new GameObject(true, cimg, (random(3, 12) / 100),  c.width, cloudY, cWidth, cHeight);
+                cloudCount += 1;
             }
         }
         
@@ -263,9 +321,35 @@ function loop() {
                 }
             }
 
-            gameObject.x -= (player.xSpeed + gameObject.speed) * (gameObject.cloud ? 2.5 : 5);
+            gameObject.x -= (player.xSpeed + gameObject.speed) * (gameObject.cloud ? 2.5 : 4);
             ctx.drawImage(gameObject.img, gameObject.x, gameObject.y, gameObject.w, gameObject.h);
         }
+
+        // Draw exhaust fumes
+        const fumeSize = player.fumes.length;
+        ctx.fillStyle = 'white';
+        
+        for (let fumeToDraw = 0; fumeToDraw < fumeSize; fumeToDraw++) {
+            const fume = player.fumes[fumeToDraw];
+
+            if (fume == undefined || player.x - fume.x > random(25, 200)) {
+                player.fumes.splice(fumeToDraw, 1);
+                continue;
+            }
+
+            ctx.beginPath();
+            fume.x -= (player.xSpeed * random(1, 5)) + .5;
+            fume.y -= 0.1;
+
+            ctx.arc(fume.x, fume.y, fume.size, 0, Math.PI * 2, true);
+            ctx.fill();
+        }
+
+        
+        // Canvas border
+        ctx.lineWidth = 10;
+        ctx.strokeStyle = 'black';
+        ctx.strokeRect(0, 0, c.width, c.height);
 
         // Init terrain generation
         ctx.fillStyle = 'black';
@@ -275,7 +359,6 @@ function loop() {
         // Generate terrain
         for (let drawX = 0; drawX < c.width; drawX++) {
             const disX = distanceTraveled + drawX;
-            const disMultiplier = (distanceTraveled / 5000);
             const seed = disX < runwayLength * 1.42 ? 100 : c.height - noise(disX)
                  * (0.25  * (disMultiplier < 1 ? 1 : disMultiplier));
 
@@ -286,16 +369,17 @@ function loop() {
         ctx.lineTo(c.width, c.height);
         ctx.fill();
 
-         // Calculate players position and draw
+         // Draw player
         player.update();
 
          // Draw score
          ctx.font = "px Verdana Bold";
          ctx.fillText('SCORE: ' + (traveled < 0 ? 0 : Math.round(traveled)), 10, 50)
+         ctx.fillText('Rotation: ' + ((player.rotation + 1) * 100), 25, 75)
 
          // Draw fuel level
-        ctx.fillStyle = 'gray';
-        ctx.fillRect(10, 16, gasoline, 12.5);
+         ctx.fillStyle = 'gray';
+        ctx.fillRect(10, 16, gasoline, 13);
 
         ctx.fillStyle = 'black';
         ctx.font = "12px Verdana";
@@ -311,18 +395,18 @@ function loop() {
 }
 
 // Player control - tracks status of button press
-var controls = {Up:0, Down:0, Left:0, Right:0};
+var controls = {Up:0, Down:0, Left:0, Right:0, Trick:0};
 
 function updateKey(key, status) {
     if (!gameOver) {
         switch(key){
-            case "ArrowUp":
+            case 'ArrowUp':
                 if (gasoline < 1)
                     status = 0;
 
                 controls.Up = status;
                 break;
-            case "ArrowDown":
+            case 'ArrowDown':
                 controls.Down = status;
                 break;
              case 'ArrowLeft':
@@ -330,6 +414,12 @@ function updateKey(key, status) {
                 break;
             case 'ArrowRight':
                 controls.Right = status;
+                break;
+            case ' ':
+                if (player.grounded && status == 1)
+                    break;
+
+                controls.Trick = status;
                 break;
         }
     }
