@@ -36,7 +36,8 @@ var player = new function() {
     // Crash
     this.imgBiker = null;
 
-    this.draw = function() {
+    this.update = function() {
+        // Calculate player position
         const disMultiplier = (distanceTraveled / 5000);
         var rearWheel =  c.height - (distanceTraveled < 595 ? 250 : distanceTraveled < 604 ?
             250 - (604 - distanceTraveled)  : noise(distanceTraveled + 5 + this.x)  * (0.25  * (disMultiplier < 1 ? 1 : disMultiplier)));
@@ -58,9 +59,14 @@ var player = new function() {
             this.grounded = true;
         }
 
+        // Burn/decrease gas
+        if (player.grounded && gasoline > 0 && controls.Up == 1 && Math.round(distanceTraveled - runwayLength) > 0)
+            gasoline -= 1;
+
+        const outOfGas = gameOver ? false : gasoline < 1 && this.grounded && this.xSpeed < 0.015;
+        
         // If game is over, player runs out of gas, player is idling and touching start wall, or has crashed
-        if (gameOver || distanceTraveled < -250
-            || gasoline < 1 && this.grounded && this.xSpeed < 0.15 && this.ySpeed < 0.15
+        if (gameOver || outOfGas || distanceTraveled < -250
             || this.grounded && Math.abs(this.rotation) > Math.PI * 0.5
             || ((distanceTraveled > runwayLength && distanceTraveled < runwayLength + 10) && this.grounded && this.xSpeed < 0.009)) {
 
@@ -69,19 +75,21 @@ var player = new function() {
                 var leaderboard = document.getElementById('leaderboard');
                 leaderboard.style.display = 'block';
                 
-                // Split rider/bike sprite into 2 for crash animation 
-                this.img.src = '/resources/bike_alacarte.png';
-
-                // Pick random fall image
-                this.imgBiker = new Image();
-                this.imgBiker.src = '/resources/biker_fall_' + Math.round(Math.random()) +'.png';
-
-                // Determine which side to draw player on relavent to rotation
-                crashOffset = this.rotation > 0.5 ? 10 : -10;
-
                 // Reset controls
                 controls.Up = 0;
                 controls.Down = 0;
+
+                if (!outOfGas) {
+                    // Split rider/bike sprite into 2 for crash animation 
+                    this.img.src = '/resources/bike_alacarte.png';
+
+                    // Pick random fall image
+                    this.imgBiker = new Image();
+                    this.imgBiker.src = '/resources/biker_fall_' + Math.round(Math.random()) +'.png';
+
+                    // Determine which side to draw player on relavent to rotation
+                    crashOffset = this.rotation > 0.5 ? 10 : -10;
+                }
             }
 
             // Declare game is over - player has crashed or gone out of bounds
@@ -100,9 +108,7 @@ var player = new function() {
             this.rotation -= (this.rotation - angle) * 0.5;
             this.rotationSpeed =  this.rotationSpeed - (angle - this.rotation);
         }
-
         
-
         this.rotationSpeed +=  (distanceTraveled < runwayLength + 5 && distanceTraveled > runwayLength - 5)
         ? -0.05 : (controls.Left - controls.Right) * 0.05;
 
@@ -113,7 +119,6 @@ var player = new function() {
         if (this.rotation < -Math.PI) this.rotation = Math.PI;
 
         // Draw to graphics
-
         if (this.imgBiker != null) {
              // Draw biker in crash
             ctx.save();
@@ -147,16 +152,19 @@ const gradient = ctx.createRadialGradient(250, 175, 500, 90, 60, 100);
 gradient.addColorStop(0, '#0033FF');
 gradient.addColorStop(1, '#33FFFF');
 
-// Clouds
+// Clouds / Jerry cans
 var cloudSeed = -1;
 var clouds = new Array();
+var jerryCans = new Array();
 
-function Cloud(cimg, cx, cy, cw, ch) {
-    this.img = cimg;
-    this.x = cx;
-    this.y = cy;
-    this.w = cw;
-    this.h = ch;
+function GameObject(isCloud, iimg, moveSpeed, ix, iy, iw, ih) {
+    this.cloud = isCloud;
+    this.img = iimg;
+    this.speed = moveSpeed;
+    this.x = ix;
+    this.y = iy;
+    this.w = iw;
+    this.h = ih;
 }
 
 // Game statistics
@@ -188,12 +196,31 @@ function loop() {
         ctx.strokeStyle = 'black';
         ctx.strokeRect(0, 0, c.width, c.height);
 
-        // Spawn clouds
+        // Spawn clouds + jerry cans
         const laps = distanceTraveled / c.width;
-        var cloudCount = clouds.length;
 
-        if (cloudSeed < laps || cloudCount == 0 ) {
-            const spawnCloud = cloudSeed == -1 || cloudCount == 0 ? 1 : Math.round(Math.random()) == 1;
+        var cloudCount = clouds.length;
+        const noClouds = cloudCount == 0;
+
+        var canCount = jerryCans.length;
+
+        if (noClouds || cloudSeed < laps)  {
+            // Spawn jerry cans
+            if (!noClouds) {
+                const spawnCan = gasoline / 25 < random(0, 2);
+                
+                if (spawnCan) {
+                    // Spawn random jerry can
+                    var canImg = new Image();
+                    canImg.src = '/resources/jerrycan.png';
+                        
+                    canCount += 1;
+                    jerryCans[canCount] = new GameObject(false, canImg, 0,  c.width, random(50, c.height / 2), 30, 30);
+                }
+            }
+
+            // Spawn clouds
+            const spawnCloud = noClouds || cloudSeed == -1 ? 1 : Math.round(Math.random()) == 1;
             cloudSeed++;
     
              if (spawnCloud) {
@@ -201,26 +228,43 @@ function loop() {
                 var cimg = new Image();
                 cimg.src = '/resources/cloud_' + (Math.round(Math.random())) + '.png';
                     
+                const cloudY = random(random(-25, 0), traveled > 0 ? 100 : 25);
                 const cWidth = random(0, 100) + 50;
                 const cHeight = random(0, 25) + 25;
-                const cloudY = random(random(-25, 0), traveled > 0 ? 100 : 25);
-                clouds[cloudCount == 0 ? 0 : cloudCount + 1] = new Cloud(cimg, c.width, cloudY, cWidth, cHeight);
+
                 cloudCount += 1;
+                clouds[cloudCount] = new GameObject(true, cimg, (random(3, 12) / 100),  c.width, cloudY, cWidth, cHeight);
             }
         }
         
-        // Draw clouds
-        for (var i = 0; i < cloudCount; i++) {
-            const cloud = clouds[i];
-    
-            // Remove cloud if out of view
-             if (cloud == undefined || cloud.x + cloud.w <= 10) {
-                clouds.splice(i, 1);
-                 continue;
+
+        // Draw game objects
+        const objsToDraw = cloudCount + canCount;
+
+        for (var objToDraw = 0; objToDraw < objsToDraw; objToDraw++) {
+            const drawingClouds = cloudCount > 0 && objToDraw < cloudCount;
+            const objIndex =  drawingClouds ? objToDraw : objToDraw - cloudCount;
+            const gameObject = (drawingClouds ? clouds: jerryCans)[objIndex];
+
+            // Remove object if out of view
+             if (gameObject == undefined || gameObject.x + gameObject.w <= 10) {
+                (drawingClouds ? clouds: jerryCans).splice(objIndex, 1);
+                continue;
             }
-    
-            cloud.x -= (player.xSpeed + 0.05) * 2.5;
-            ctx.drawImage(cloud.img, cloud.x, cloud.y, cloud.w, cloud.h);
+
+            // Jerry can collision detection
+            if (!gameObject.cloud) {
+                if (player.x > gameObject.x  && player.x < gameObject.x + 30) {
+                    if (player.y > gameObject.y && player.y < gameObject.y + 30) {
+                        jerryCans.splice(objIndex, 1);
+                        gasoline = gasoline + 50 > 125 ? 125 : gasoline + 50;
+                        continue;
+                    }
+                }
+            }
+
+            gameObject.x -= (player.xSpeed + gameObject.speed) * (gameObject.cloud ? 2.5 : 5);
+            ctx.drawImage(gameObject.img, gameObject.x, gameObject.y, gameObject.w, gameObject.h);
         }
 
         // Init terrain generation
@@ -243,10 +287,10 @@ function loop() {
         ctx.fill();
 
          // Calculate players position and draw
-        player.draw();
+        player.update();
 
          // Draw score
-         ctx.font = "15px Verdana Bold";
+         ctx.font = "px Verdana Bold";
          ctx.fillText('SCORE: ' + (traveled < 0 ? 0 : Math.round(traveled)), 10, 50)
 
          // Draw fuel level
@@ -255,7 +299,7 @@ function loop() {
 
         ctx.fillStyle = 'black';
         ctx.font = "12px Verdana";
-        ctx.fillText('Gasoline', 12.5, 27.5)
+        ctx.fillText('GASOLINE', 12.5, 27.25)
 
          // Draw fuel guage
          ctx.lineWidth = 2;
@@ -273,9 +317,8 @@ function updateKey(key, status) {
     if (!gameOver) {
         switch(key){
             case "ArrowUp":
-                // Burn/decrease gas
-                if (gasoline > 0 && status == 1)
-                    gasoline -= 1;
+                if (gasoline < 1)
+                    status = 0;
 
                 controls.Up = status;
                 break;
