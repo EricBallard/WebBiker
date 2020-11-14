@@ -21,35 +21,28 @@ var noise = x => {
 
 // Player 
 var player = new function() {
-    // Road debris
-    function Particle(ps, px, py) {
-        this.size = ps;
-        this.x = px;
-        this.y = py;
-    }
-
-    this.debris = new Array();
+    // Player image
+    this.imgBiker = null;
+    this.img = new Image();
+    this.img.src = '/resources/biker.png';
+    this.w = 30, this.h = 30;
 
     // Position
     this.x = c.width / 2, this.y = 0;
     this.doingTrick = false;
     this.grounded = false;
+    this.trickCounter = 0;
 
     // Velocity
     this.xSpeed = 0, this.ySpeed = 0;
     this.rotation = 0, this.rotationSpeed = 0;
 
-    // Player image
-    this.img = new Image();
-    this.img.src = '/resources/biker.png';
-    this.w = 30, this.h = 30;
-
-    // Crash
-    this.imgBiker = null;
+    // Score popups + debris
+    this.popups = new Array(), this.debris = new Array();
 
     this.update = function() {
         // Calculate player position
-        const disMultiplier = (distanceTraveled / 15000);
+        const disMultiplier = (distanceTraveled / 20000);
         var rearWheel =  c.height - (distanceTraveled < 595 ? 250 : distanceTraveled < 604 ?
             250 - (604 - distanceTraveled)  : noise(distanceTraveled + 5 + this.x)  * (0.25  * (disMultiplier < 1 ? 1 : disMultiplier)));
 
@@ -72,6 +65,7 @@ var player = new function() {
 
          // Perform stunt trick or init crash
         var crashed = false;
+        var popSize = this.popups.length;
 
         if (this.doingTrick) {
             if (this.grounded) {
@@ -81,15 +75,23 @@ var player = new function() {
                 this.img.src = '/resources/biker.png';
                 this.doingTrick = false;
             } else {
-                // Successfully doing trick
-                console.log('nice!');
-                score = score + 50;
+                // Hold trick for points
+                if (this.trickCounter < 25) {
+                    this.trickCounter += 1;
+                } else {
+                    // Successfully doing trick
+                    this.trickCounter = 0;
+                    score = score + 250;
+                    const px = this.x + (Math.round(Math.random()) == 1 ? random(-60, -45) : random(15, 30));
+                    this.popups[popSize == 0 ? 0 : popSize+= 1] = new Popup("+250", px, this.y - random(15, 30));
+                }
             }
         } else if (!this.grounded) {
             if(controls.Trick == 1) {
                 this.w = 33, this.h = 33;
                 this.img.src = '/resources/biker_trick.png';
                 this.doingTrick = true;
+                this.trickCounter = 0;
             }
         }
 
@@ -105,12 +107,12 @@ var player = new function() {
                 var px = this.x - random(0, 50), py = this.y + random(0, 10);
                 const rotOff = ((this.rotation + 1) * 100);
 
-                 if (rotOff > 0 && rotOff < 90) {
-                    py += random(5, 10);
-                } else if (rotOff > 140) {
-                    py -= random(10, 20);
-                } else if (rotOff < -10) {
-                    py += random(5, 10);
+                 if (rotOff < 90) {
+                    // Facing up hill
+                    py += random(0, 10);
+                } else if (rotOff > 100) {
+                    // Facing down hill
+                    py -= random(0, 10);
                 }
 
                 this.debris[debrisize + spawn] = new Particle(Math.random() * 1, px, py);
@@ -125,6 +127,7 @@ var player = new function() {
         // If game is over, player runs out of gas, player is idling and touching start wall, or has crashed
         const outOfGas = gameOver || crashed ? false : gasoline < 1 && this.grounded && this.xSpeed < 0.015;
 
+        // End game
         if (gameOver || crashed || outOfGas || distanceTraveled < -250
             || this.grounded && Math.abs(this.rotation) > Math.PI * 0.5
             || ((distanceTraveled > runwayLength && distanceTraveled < runwayLength + 10) && this.grounded && this.xSpeed < 0.009)) {
@@ -173,9 +176,25 @@ var player = new function() {
 
         this.rotation -= this.rotationSpeed * 0.1;
 
+        var flipped = false;
         // Normalize rotation
-        if (this.rotation > Math.PI) this.rotation = -Math.PI;
-        if (this.rotation < -Math.PI) this.rotation = Math.PI;
+        if (this.rotation > Math.PI) {
+            // Front flip
+            this.rotation = -Math.PI; 
+            flipped = true;
+        }
+
+        if (this.rotation < -Math.PI) {
+            // Back flip
+            this.rotation = Math.PI;
+            flipped = true;
+        }
+
+        if (!gameOver && flipped) {
+            score += 1000;
+            const px = this.x + (Math.round(Math.random()) == 1 ? random(-60, -45) : random(15, 30));
+            this.popups[popSize == 0 ? 0 : popSize + 1] = new Popup("+1000", px, this.y - random(15, 30));
+        }
 
         // Draw to graphics
         if (this.imgBiker != null) {
@@ -211,6 +230,10 @@ const gradient = ctx.createRadialGradient(250, 175, 500, 90, 60, 100);
 gradient.addColorStop(0, '#0033FF');
 gradient.addColorStop(1, '#33FFFF');
 
+// Pop up / debris objects
+function Popup(pt, px, py) { this.text = pt, this.x = px, this.y = py; }
+function Particle(ps, px, py) { this.size = ps, this.x = px, this.y = py; }
+
 // Clouds / Jerry cans
 var cloudSeed = -1;
 var clouds = new Array();
@@ -240,14 +263,16 @@ var gameOver = false;
 function loop() {
     if (!gameOver || (player.grounded && player.xSpeed > 0.015)) {
         // Calculate players speed and relative distance traveled
-        const disMultiplier = (distanceTraveled / 15000);
+        const disMultiplier = (distanceTraveled / 20000);
         const speedMultiplier = (player.grounded || player.xSpeed  > 0.15 ? controls.Up - (player.grounded ? controls.Down : 0) : 0)
         player.xSpeed  -= (player.xSpeed  - speedMultiplier) * 0.015;
-        distanceTraveled += 10 * player.xSpeed ;
+
+        const momentum =10 * player.xSpeed;
+        distanceTraveled += momentum;
 
         // Score
         const traveled = (distanceTraveled - runwayLength);
-        score = (traveled < 1 ? 0 : traveled) - score;
+        score = (traveled < 1 ? 0 : score + momentum);
 
         // Canvas background
         ctx.fillStyle = gradient;
@@ -298,9 +323,9 @@ function loop() {
         // Draw game objects
         const objsToDraw = cloudCount + canCount;
 
-        for (var objToDraw = 0; objToDraw < objsToDraw; objToDraw++) {
-            const drawingClouds = cloudCount > 0 && objToDraw < cloudCount;
-            const objIndex =  drawingClouds ? objToDraw : objToDraw - cloudCount;
+        for (var toDraw = 0; toDraw < objsToDraw; toDraw++) {
+            const drawingClouds = cloudCount > 0 && toDraw < cloudCount;
+            const objIndex =  drawingClouds ? toDraw : toDraw - cloudCount;
             const gameObject = (drawingClouds ? clouds: jerryCans)[objIndex];
 
             // Remove object if out of view
@@ -324,26 +349,40 @@ function loop() {
             ctx.drawImage(gameObject.img, gameObject.x, gameObject.y, gameObject.w, gameObject.h);
         }
 
-        // Draw debris
+        // Draw debris + popups
         ctx.fillStyle = 'black';
-        const debrisSize = player.debris.length;     
+        const popSize = player.popups.length, debSize = player.debris.length;
+        const amountToDraw = popSize +  debSize;
+        
+        for (let toDraw = 0; toDraw < amountToDraw; toDraw++) {
+            const drawingPopup = popSize > 0 && toDraw < popSize;
+            const objIndex =  drawingPopup ? toDraw : toDraw - popSize;
 
-        for (let fumeToDraw = 0; fumeToDraw < debrisSize; fumeToDraw++) {
-            const fume = player.debris[fumeToDraw];
-  
-            if (fume == undefined || player.x - fume.x > random(25, 200)) {
-                player.debris.splice(fumeToDraw, 1);
+            const drawable = (drawingPopup ? player.popups : player.debris)[objIndex];
+            var isDebris = false;
+
+            // Remove if out of view 
+            if (drawable == undefined ||
+                 player.x - drawable.x > ((isDebris = Particle.prototype.isPrototypeOf(drawable) || (player.grounded && player.xSpeed < 0.25)) ? random(25, 200) : random(100, 400))) {
+               
+                (drawingPopup ? player.popups: player.debris).splice(objIndex, 1);
                 continue;
             }
-  
-            ctx.beginPath();
-             fume.x -= (player.xSpeed * random(1, 5)) + .5;
-            fume.y -= 0.1;
-  
-            ctx.arc(fume.x, fume.y, fume.size, 0, Math.PI * 2, true);
-            ctx.fill();
+
+            drawable.x -= (player.xSpeed * random(1, 5)) + .5;
+            drawable.y -= 0.1;
+
+            // Draw debris
+            if (isDebris) {
+                ctx.beginPath();
+                ctx.arc(drawable.x, drawable.y, drawable.size, 0, Math.PI * 2, true);
+                ctx.fill();
+            } else {
+                // Draw popups
+                ctx.fillText(drawable.text, drawable.x, drawable.y);
+            }
         }
-        
+
         // Canvas border
         ctx.lineWidth = 10;
         ctx.strokeStyle = 'black';
@@ -371,8 +410,7 @@ function loop() {
 
          // Draw score
          ctx.font = "px Verdana Bold";
-         ctx.fillText('SCORE: ' + score, 10, 50)
-         ctx.fillText('Rotation: ' + ((player.rotation + 1) * 100), 25, 75)
+         ctx.fillText('SCORE: ' + Math.round(score), 10, 50)
 
          // Draw fuel level
          ctx.fillStyle = 'gray';
@@ -391,11 +429,19 @@ function loop() {
     requestAnimationFrame(loop);
 }
 
+// Play background music, smooth jazz ;)
+const audio = new Audio('/resources/background_music_compressed.mp3');
+audio.volume = 0.35;
+
 // Player control - tracks status of button press
 var controls = {Up:0, Down:0, Left:0, Right:0, Trick:0};
 
 function updateKey(key, status) {
     if (!gameOver) {
+        // Play music when user interacts with page
+        if (audio.paused)
+            audio.play();
+
         switch(key){
             case 'ArrowUp':
                 if (gasoline < 1)
@@ -424,6 +470,7 @@ function updateKey(key, status) {
 
 onkeydown = e => { updateKey(e.key, 1) };
 onkeyup = e => { updateKey(e.key, 0) };
+
 
 // It's alive!
 loop();
