@@ -21,14 +21,14 @@ var noise = x => {
 
 // Player 
 var player = new function() {
-    // Exhaust fumes
+    // Road debris
     function Particle(ps, px, py) {
         this.size = ps;
         this.x = px;
         this.y = py;
     }
 
-    this.fumes = new Array();
+    this.debris = new Array();
 
     // Position
     this.x = c.width / 2, this.y = 0;
@@ -42,6 +42,7 @@ var player = new function() {
     // Player image
     this.img = new Image();
     this.img.src = '/resources/biker.png';
+    this.w = 30, this.h = 30;
 
     // Crash
     this.imgBiker = null;
@@ -69,60 +70,56 @@ var player = new function() {
             this.grounded = true;
         }
 
+         // Perform stunt trick or init crash
         var crashed = false;
 
-          // Perform stunt trick or init crash
         if (this.doingTrick) {
             if (this.grounded) {
                 crashed = true;
             } else if(controls.Trick == 0) {
+                this.w = 30, this.h = 30;
                 this.img.src = '/resources/biker.png';
                 this.doingTrick = false;
+            } else {
+                // Successfully doing trick
+                console.log('nice!');
+                score = score + 50;
             }
         } else if (!this.grounded) {
             if(controls.Trick == 1) {
+                this.w = 33, this.h = 33;
                 this.img.src = '/resources/biker_trick.png';
                 this.doingTrick = true;
             }
         }
 
 
-        // Burn/decrease gas + spawn exhaust fumes
-        const accelerating = gasoline > 0 && controls.Up == 1;
+        // Spawn debris
+        const accelerating = player.grounded && gasoline > 0 && controls.Up == 1;
 
-        if (accelerating && this.fumes.length < random(8, 16 * (this.xSpeed + 1))) {
-            const fumesToSpawn = random(8, 16);
-            var fumeSize = this.fumes.length;
+        if (accelerating && this.debris.length < random(8, 16 * (this.xSpeed + 1))) {
+            const debrisToSpawn = random(8, 16);
+            var debrisize = this.debris.length;
 
-            for (let spawn = 0; spawn < fumesToSpawn; spawn++) {
-                var rotOff = ((this.rotation + 1) * 100);
-
-                var px = this.x, py = this.y + random(-2, 2);
+            for (let spawn = 0; spawn < debrisToSpawn; spawn++) {
+                var px = this.x - random(0, 50), py = this.y + random(0, 10);
+                const rotOff = ((this.rotation + 1) * 100);
 
                  if (rotOff > 0 && rotOff < 90) {
-                    // Bike is rotated between 9-12 o'clock
-                    px -= random(25, 75);
                     py += random(5, 10);
                 } else if (rotOff > 140) {
-                    px -= random(25, 75);
                     py -= random(10, 20);
-                } else if (rotOff < -110) {
-                    // Bike is 6-9 o'clock
-                    px += random(25, 75)
                 } else if (rotOff < -10) {
-                    px = this.x + random(-2, 2);
                     py += random(5, 10);
-                } else {
-                    px -= random(25, 75);
                 }
 
-
-                this.fumes[fumeSize + spawn] = new Particle(Math.random() * (player.grounded ? 2 : 1), px, py);
-                fumeSize += 1;
+                this.debris[debrisize + spawn] = new Particle(Math.random() * 1, px, py);
+                debrisize += 1;
             }
         }
 
-        if (accelerating && player.grounded && Math.round(distanceTraveled - runwayLength) > 0)
+        // Burn gasoline
+        if (accelerating && Math.round(distanceTraveled - runwayLength) > 0)
             gasoline = gasoline - 0.75 < 0 ? 0 : gasoline - 0.75;
         
         // If game is over, player runs out of gas, player is idling and touching start wall, or has crashed
@@ -198,7 +195,7 @@ var player = new function() {
         ctx.translate(this.x, this.y);
         ctx.rotate(this.rotation);
 
-        ctx.drawImage(this.img, -15, -15, 30, 30);
+        ctx.drawImage(this.img, -15, -15, this.w, this.h);
         ctx.restore();
     }
 }
@@ -235,6 +232,7 @@ const runwayLength = 600;
 var distanceTraveled = 0;
 var crashOffset = 0;
 var gasoline = 125;
+var score = 0;
 
 var gameOver = false;
 
@@ -249,7 +247,8 @@ function loop() {
 
         // Score
         const traveled = (distanceTraveled - runwayLength);
-        
+        score = (traveled < 1 ? 0 : traveled) - score;
+
         // Canvas background
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0 , c.width, c.height);  
@@ -325,26 +324,25 @@ function loop() {
             ctx.drawImage(gameObject.img, gameObject.x, gameObject.y, gameObject.w, gameObject.h);
         }
 
-        // Draw exhaust fumes
-        const fumeSize = player.fumes.length;
-        ctx.fillStyle = 'white';
-        
-        for (let fumeToDraw = 0; fumeToDraw < fumeSize; fumeToDraw++) {
-            const fume = player.fumes[fumeToDraw];
+        // Draw debris
+        ctx.fillStyle = 'black';
+        const debrisSize = player.debris.length;     
 
+        for (let fumeToDraw = 0; fumeToDraw < debrisSize; fumeToDraw++) {
+            const fume = player.debris[fumeToDraw];
+  
             if (fume == undefined || player.x - fume.x > random(25, 200)) {
-                player.fumes.splice(fumeToDraw, 1);
+                player.debris.splice(fumeToDraw, 1);
                 continue;
             }
-
+  
             ctx.beginPath();
-            fume.x -= (player.xSpeed * random(1, 5)) + .5;
+             fume.x -= (player.xSpeed * random(1, 5)) + .5;
             fume.y -= 0.1;
-
+  
             ctx.arc(fume.x, fume.y, fume.size, 0, Math.PI * 2, true);
             ctx.fill();
         }
-
         
         // Canvas border
         ctx.lineWidth = 10;
@@ -352,7 +350,6 @@ function loop() {
         ctx.strokeRect(0, 0, c.width, c.height);
 
         // Init terrain generation
-        ctx.fillStyle = 'black';
         ctx.beginPath();
         ctx.moveTo(0, c.height);
 
@@ -370,11 +367,11 @@ function loop() {
         ctx.fill();
 
          // Draw player
-        player.update();
+         player.update();
 
          // Draw score
          ctx.font = "px Verdana Bold";
-         ctx.fillText('SCORE: ' + (traveled < 0 ? 0 : Math.round(traveled)), 10, 50)
+         ctx.fillText('SCORE: ' + score, 10, 50)
          ctx.fillText('Rotation: ' + ((player.rotation + 1) * 100), 25, 75)
 
          // Draw fuel level
