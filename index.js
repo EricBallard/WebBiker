@@ -24,7 +24,7 @@ var player = new function() {
     // Player image
     this.imgBiker = null;
     this.img = new Image();
-    this.img.src = '/resources/biker.png';
+    this.img.src = '/resources/biker/biker.png';
     this.w = 30, this.h = 30;
 
     // Position
@@ -72,7 +72,7 @@ var player = new function() {
                 crashed = true;
             } else if(controls.Trick == 0) {
                 this.w = 30, this.h = 30;
-                this.img.src = '/resources/biker.png';
+                this.img.src = '/resources/biker/biker.png';
                 this.doingTrick = false;
             } else {
                 // Hold trick for points
@@ -89,7 +89,7 @@ var player = new function() {
         } else if (!this.grounded) {
             if(controls.Trick == 1) {
                 this.w = 33, this.h = 33;
-                this.img.src = '/resources/biker_trick.png';
+                this.img.src = '/resources/biker/biker_trick.png';
                 this.doingTrick = true;
                 this.trickCounter = 0;
             }
@@ -143,11 +143,11 @@ var player = new function() {
 
                 if (!outOfGas) {
                     // Split rider/bike sprite into 2 for crash animation 
-                    this.img.src = '/resources/bike_alacarte.png';
+                    this.img.src = '/resources/biker/bike_alacarte.png';
 
                     // Pick random fall image
                     this.imgBiker = new Image();
-                    this.imgBiker.src = '/resources/biker_fall_' + Math.round(Math.random()) +'.png';
+                    this.imgBiker.src = '/resources/biker/biker_fall_' + Math.round(Math.random()) +'.png';
 
                     // Determine which side to draw player on relavent to rotation
                     crashOffset = this.rotation > 0.5 ? 10 : -10;
@@ -294,7 +294,7 @@ function loop() {
                 if (spawnCan) {
                     // Spawn random jerry can
                     var canImg = new Image();
-                    canImg.src = '/resources/jerrycan.png';
+                    canImg.src = '/resources/etc/jerrycan.png';
                         
                     jerryCans[canCount] = new GameObject(false, canImg, 0,  c.width, random(50 / disMultiplier, c.height / 2), 30, 30);
                     canCount += 1;
@@ -308,7 +308,7 @@ function loop() {
              if (spawnCloud) {
                 // Generate random cloud
                 var cimg = new Image();
-                cimg.src = '/resources/cloud_' + (Math.round(Math.random())) + '.png';
+                cimg.src = '/resources/etc/cloud_' + (Math.round(Math.random())) + '.png';
                     
                 const cloudY = random(random(-25, 0), traveled > 0 ? 100 : 25);
                 const cWidth = random(0, 100) + 50;
@@ -336,8 +336,8 @@ function loop() {
 
             // Jerry can collision detection
             if (!gameObject.cloud) {
-                if (player.x > gameObject.x  && player.x < gameObject.x + 30) {
-                    if (player.y > gameObject.y && player.y < gameObject.y + 30) {
+                if (player.x > gameObject.x - 30  && player.x < gameObject.x + 30) {
+                    if (player.y > gameObject.y - 30 && player.y < gameObject.y + 30) {
                         jerryCans.splice(objIndex, 1);
                         gasoline = gasoline + 50 > 125 ? 125 : gasoline + 50;
                         continue;
@@ -425,16 +425,46 @@ function loop() {
          ctx.strokeRect(10, 15, 125, 15);
     }
 
+    // Draw mobile controls
+    if (usingMobile) {
+        ctx.drawImage(c.width - 100, c.height - 50, 75, 75);
+    }
+
     // Update canvas
     requestAnimationFrame(loop);
 }
 
 // Play background music, smooth jazz ;)
-const audio = new Audio('/resources/background_music_compressed.mp3');
+const audio = new Audio('/resources/audio/background_music_compressed.mp3');
 audio.volume = 0.35;
 
 // Player control - tracks status of button press
 var controls = {Up:0, Down:0, Left:0, Right:0, Trick:0};
+
+var isMobile = {
+    Android: function() {
+        return navigator.userAgent.match(/Android/i);
+    },
+    BlackBerry: function() {
+        return navigator.userAgent.match(/BlackBerry/i);
+    },
+    iOS: function() {
+        return navigator.userAgent.match(/iPhone|iPad|iPod/i);
+    },
+    Opera: function() {
+        return navigator.userAgent.match(/Opera Mini/i);
+    },
+    Windows: function() {
+        return navigator.userAgent.match(/IEMobile/i) || navigator.userAgent.match(/WPDesktop/i);
+    },
+    any: function() {
+        return (isMobile.Android() || isMobile.BlackBerry() || isMobile.iOS() || isMobile.Opera() || isMobile.Windows()) ? true : false;
+    }
+};
+
+const usingMobile = isMobile.any();
+const goImg = new Image();
+goImg.src = '/resources/controls/mobile_go.png';
 
 function updateKey(key, status) {
     if (!gameOver) {
