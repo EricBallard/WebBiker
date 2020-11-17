@@ -130,8 +130,7 @@ var player = new function() {
         // End game
         if (gameOver || crashed || outOfGas || distanceTraveled < -250
             || this.grounded && Math.abs(this.rotation) > Math.PI * 0.5
-            || ((distanceTraveled > runwayLength && distanceTraveled < runwayLength + 10) && this.grounded && this.xSpeed < 0.009)) {
-
+            || ((distanceTraveled > runwayLength && distanceTraveled < runwayLength + 10) && this.grounded && this.xSpeed < 0.009)) {                
             // Reset controls
             controls.Up = 0;
             controls.Down = 0;
@@ -152,6 +151,12 @@ var player = new function() {
                     // Determine which side to draw player on relavent to rotation
                     crashOffset = this.rotation > 0.5 ? 10 : -10;
                 }
+                
+                // Set audio to end
+                audio.loop = false;
+                audio.currentTime = 112;
+
+                accel_sfx.pause();
             }
 
             // Declare game is over - player has crashed or gone out of bounds
@@ -434,9 +439,26 @@ function loop() {
     requestAnimationFrame(loop);
 }
 
-// Play background music, smooth jazz ;)
+// Game Audio
 const audio = new Audio('/resources/audio/background_music_compressed.mp3');
 audio.volume = 0.35;
+audio.loop = true;
+
+const accel_sfx = new Audio('/resources/audio/motobike_accelerate.mp3');
+accel_sfx.loop = true;
+
+function fadeOut(p_audio){  
+    var actualVolume = p_audio.volume;
+    var fadeOutInterval = setInterval(function(){
+        actualVolume = (parseFloat(actualVolume) - 0.1).toFixed(1);
+        if(actualVolume >= 0){
+            p_audio.volume = actualVolume;
+        } else {
+            p_audio.pause();
+            clearInterval(fadeOutInterval);
+        }
+    }, 100);
+}
 
 // Player control - tracks status of button press
 var controls = {Up:0, Down:0, Left:0, Right:0, Trick:0};
@@ -476,6 +498,15 @@ function updateKey(key, status) {
             case 'ArrowUp':
                 if (gasoline < 1)
                     status = 0;
+
+                // Accelerate sfx
+                if (status == 1) {
+                    accel_sfx.currentTime = 0;
+                    accel_sfx.volume = 0.4;
+                    accel_sfx.play();
+                } else {
+                    fadeOut(accel_sfx);
+                }
 
                 controls.Up = status;
                 break;
