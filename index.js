@@ -22,8 +22,8 @@ var noise = x => {
 // Player 
 var player = new function() {
     // Player image
-    this.imgBiker = null;
-    this.img = new Image();
+    this.imgBiker = null, this.backdrop = new Image(), this.img = new Image();
+    this.backdrop.src = '/resources/etc/highlight_drop.png';
     this.img.src = '/resources/biker/biker.png';
     this.w = 30, this.h = 30;
 
@@ -216,9 +216,39 @@ var player = new function() {
 
         // Draw player
         ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.rotation);
 
+        // If player y is above canvas height - show player highlight backdrop 
+        const flyingHigh = this.y < 0;
+        
+        if (flyingHigh) {
+            if (this.doingTrick) {
+                if (!this.img.src.includes('biker_trick_highlight.png')) {
+                    this.img.src = '/resources/biker/biker_trick_highlight.png';
+                }
+            } else {
+                if (!this.img.src.includes('biker_highlight.png')) {
+                    this.img.src = '/resources/biker/biker_highlight.png';
+                }
+            }
+
+            // Draw height text
+            ctx.translate(this.x - 30, 0 + 15);
+            ctx.drawImage(this.backdrop, 0, 0, 60, 60);
+
+            ctx.font = "14px Verdana Bold";
+            ctx.fillText((Math.round(c.height - this.y) + "M"), 15, 75);
+
+            ctx.translate(30, 30);
+
+            //TODO
+        } else {
+            if (!this.doingTrick && !this.img.src.includes('biker.png'))
+                this.img.src = '/resources/biker/biker.png';
+
+            ctx.translate(this.x, this.y);
+        }
+
+        ctx.rotate(this.rotation);
         ctx.drawImage(this.img, -15, -15, this.w, this.h);
         ctx.restore();
     }
@@ -414,7 +444,7 @@ function loop() {
          player.update();
 
          // Draw score
-         ctx.font = "px Verdana Bold";
+         ctx.font = "Verdana Bold";
          ctx.fillText('SCORE: ' + Math.round(score), 10, 50)
 
          // Draw fuel level
