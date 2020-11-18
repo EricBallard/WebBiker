@@ -1,24 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Eric Ballard | WebBiker</title>
     <style>*{margin:0;}</style>
     <link rel="stylesheet" href="style.css">
+    <script>
+        function fetchHiscores() {
+            var xmlhttp = new XMLHttpRequest();
+            xmlhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    // Backup submit form
+                    const hiscores = document.getElementById("hiscores");
+                    document.getElementById("form_holder").innerHTML = hiscores.innerHTML;
+
+                    // Show hiscores
+                    document.getElementById("leaderboard_title").innerHTML = "<u>Top 5</u>";
+                    hiscores.innerHTML = this.responseText;
+                }
+            };
+            xmlhttp.open("GET","/php/view_hiscores.php", true);
+            xmlhttp.send();
+        }
+
+        function updateSubmitBtn() {
+            const initials = document.getElementById('name_input').value;
+            document.getElementById('submit_input').disabled = (initials.search(/[^a-zA-Z]+/) != -1 || initials.length < 2);
+        }
+
+        function submitScore() {
+            const scoreObtained = score;
+
+            if (score < 1000) {
+                fetchHiscores();
+                return;
+            }
+
+            const initials = document.getElementById('name_input').value;
+
+            var xmlhttp = new XMLHttpRequest();
+            xmlhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    fetchHiscores();
+                }
+            };
+            xmlhttp.open("GET","/php/submit_score.php?initials=" + initials + "&scoreObtained=" + scoreObtained, true);
+            xmlhttp.send();
+        }
+    </script>
 </head>
+
 <body> 
     
     <!-- Username input - appears at end of game -->
     <div class="leaderboard" id="leaderboard">
-        <h2>Hiscores</h2>
+        <h2 id="leaderboard_title"><u>Hiscores</u></h2>
 
-        <form action="/action_page.php">
-        <label for="name_input">Username:</label>
-        <br>
-        <input type="text" id="name_input">
-        <br>
-        <input type="submit" value="Submit">
-        </form> 
+        <div class="hiscores" id="hiscores">
+            <form class ="submitscore" hidden=true>
+                <br>
+                <label for="name_input">Initials</label>
+                <input type="text" id="name_input"  maxlength="3" oninput="updateSubmitBtn()">
+                
+                <br>
+                <button type ="button" id="submit_input" onclick="submitScore()" disabled=true>Submit</button>
+                <br>
+            </form> 
+        </div>
+
+        <div class="replay" onclick="replay()">
+            <h2>RETRY</h2>
+            <input class="replay_button" type="image" src="/resources/etc/replay.png" alt="Replay" width="30" height="30">
+        </div>
+        
+        <div class ="form_holder" id="form_holder"></div>
     </div>
         
     <script src ="index.js"></script>

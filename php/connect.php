@@ -12,5 +12,5 @@ $dbc = new mysqli($servername, $username, $password, $database);
 if ($dbc -> connect_errno) {
     echo "Failed to connect to MySQL: " . $mysqli -> connect_error;
     exit();
-  }
+}
 ?>

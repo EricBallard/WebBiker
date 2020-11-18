@@ -155,7 +155,6 @@ var player = new function() {
                 // Set audio to end
                 audio.loop = false;
                 audio.currentTime = 112;
-
                 accel_sfx.pause();
             }
 
@@ -218,7 +217,7 @@ var player = new function() {
         ctx.save();
 
         // If player y is above canvas height - show player highlight backdrop 
-        const flyingHigh = this.y < 0;
+        const flyingHigh = score > 0 && this.y < 0;
         
         if (flyingHigh) {
             if (this.doingTrick) {
@@ -235,7 +234,8 @@ var player = new function() {
             ctx.translate(this.x - 30, 0 + 15);
             ctx.drawImage(this.backdrop, 0, 0, 60, 60);
 
-            ctx.font = "14px Verdana Bold";
+            ctx.fillStyle = 'gray'
+            ctx.font = "1.15rem Verdana Bold";
             ctx.fillText((Math.round(c.height - this.y) + "M"), 15, 75);
 
             ctx.translate(30, 30);
@@ -253,7 +253,6 @@ var player = new function() {
         ctx.restore();
     }
 }
-
 
 // Generate "random" numbers
 function random(min, max) {
@@ -452,8 +451,8 @@ function loop() {
         ctx.fillRect(10, 16, gasoline, 13);
 
         ctx.fillStyle = 'black';
-        ctx.font = "12px Verdana";
-        ctx.fillText('GASOLINE', 12.5, 27.25)
+        ctx.font = "1.05rem Verdana";
+        ctx.fillText('GASOLINE', 12.5, 28.5)
 
          // Draw fuel guage
          ctx.lineWidth = 2;
@@ -565,3 +564,27 @@ onkeyup = e => { updateKey(e.key, 0) };
 
 // It's alive!
 loop();
+
+// Reset game
+function replay() {
+    player.imgBiker = null, player.backdrop = new Image(), player.img = new Image();
+    player.popups = new Array(), player.debris = new Array(), clouds = new Array(), jerryCans = new Array();
+
+    controls = {Up:0, Down:0, Left:0, Right:0, Trick:0};
+    player.backdrop.src = '/resources/etc/highlight_drop.png';
+    player.img.src = '/resources/biker/biker.png';
+
+    player.w = 30, player.h = 30,  player.x = c.width / 2, player.y = 0;
+    player.doingTrick = false, player.grounded = false, gameOver = false;
+    player.trickCounter = 0, player.xSpeed = 0, this.ySpeed = 0;
+
+    player.rotation = 0, player.rotationSpeed = 0;
+    cloudSeed = -1, distanceTraveled = 0, crashOffset = 0, gasoline = 125, score = 0;
+
+    leaderboard.style.display = 'none';
+    audio.currentTime = 0;
+    audio.loop = true;
+
+    // Restore submit score form
+    document.getElementById('hiscores').innerHTML = document.getElementById('form_holder').innerHTML;
+}

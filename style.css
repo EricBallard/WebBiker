@@ -1,31 +1,87 @@
 .leaderboard{
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+    margin: auto;
     position: absolute;
     z-index: 1;
-    left: 30%;
-    bottom: 50%;
-    background-color: black;
-    width: 250px;
-    text-decoration: white;
+
+    min-height: 230px;
+    width: 25%;
+    height: 25%;
+    text-align: center;
+    background-color: gray;
+    border: 0.5rem solid black;
     display: none;
+}
+
+.submitscore {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    font-weight: bold; 
+    min-height: 150px;
+}
+
+.queryresults{
+    font-size: 1.15rem;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    height: 75%;
+
+}
+
+.replay:hover {
+    cursor: pointer;
+}
+
+.replay_button {
+    right: 25px;
+    bottom: 2.5px;
+    margin: auto;
+    position: absolute;
+}
+
+.replay h2 {
+    left: 25px;
+    bottom: 5px;
+    margin: auto;
+    position: absolute;
+    color: black;
 }
 
 h2{
     color: white;
 }
 
-form{
-    color: white;
+input { 
+    border: 0.05rem dotted black;
+    background-color: darkgray;
+    font-size: 1.15rem;
+    text-align: center; 
+}
+
+button {
+    border: 0.05rem dotted black;
+    background-color: darkgray;
+    font-weight: bold; 
 }
 
 canvas{
-    position: absolute;
     top: 0px;
     left: 0px;
     right: 0px;
     bottom: 0px;
     margin: auto;
+    position: absolute;
 }
 
 body{
     background-color: gray;
+}
+
+.form_holder{
+    display: none;
 }
