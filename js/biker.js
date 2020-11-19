@@ -1,8 +1,12 @@
 // Init graphics
 var c = document.createElement('canvas');
 var ctx = c.getContext('2d');
-c.width = 500;
-c.height = 350;
+
+const width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
+const height = ((window.innerWidth > 0) ? window.innerHeight : screen.height) / 2;
+
+c.width = width;
+c.height = height;
 document.body.appendChild(c);
 
 
@@ -18,6 +22,29 @@ var noise = x => {
     x = x * 0.01 % 255;
     return lerp(perm[Math.floor(x)], perm[Math.ceil(x)], x - Math.floor(x));
 }
+
+// Game Audio
+const audio = new Audio('/resources/audio/background_music_compressed.mp3');
+audio.volume = 0.35;
+audio.loop = true;
+
+const accel_sfx = new Audio('/resources/audio/motobike_accelerate.mp3');
+accel_sfx.loop = true;
+
+function fadeOut(p_audio){  
+    var actualVolume = p_audio.volume;
+    var fadeOutInterval = setInterval(function(){
+        actualVolume = (parseFloat(actualVolume) - 0.1).toFixed(1);
+        if(actualVolume >= 0){
+            p_audio.volume = actualVolume;
+        } else {
+            p_audio.pause();
+            clearInterval(fadeOutInterval);
+        }
+    }, 100);
+}
+
+var seedX = -1;
 
 // Player 
 var player = new function() {
@@ -42,59 +69,71 @@ var player = new function() {
 
     this.update = function() {
         // Calculate player position
-        const disMultiplier = (distanceTraveled / 20000);
-        var rearWheel =  c.height - (distanceTraveled < 595 ? 250 : distanceTraveled < 604 ?
-            250 - (604 - distanceTraveled)  : noise(distanceTraveled + 5 + this.x)  * (0.25  * (disMultiplier < 1 ? 1 : disMultiplier)));
+        var rearWheel, frontWheel;
 
-        var frontWheel =  c.height - (distanceTraveled < 595 ? 250 : distanceTraveled < 604 ?
-            250 - (604 - distanceTraveled)  : noise(distanceTraveled + this.x)  * (0.25  * (disMultiplier < 1 ? 1 : disMultiplier)));
+        if (distanceTraveled < runwayLength ) {
+            rearWheel =  distanceTraveled >= runwayLength - 5 ? 100 - (distanceTraveled - runwayLength) : 100;
+            frontWheel = rearWheel;
+        } else {
+            const disMultiplier = (distanceTraveled / 20000);
+            rearWheel =  c.height - (noise(distanceTraveled + 5 + this.x)  * (0.25  * (disMultiplier < 1 ? 1 : disMultiplier)));
+            frontWheel = seedX;
+        }
+
 
         // Simulate road vibration while accelerating
         if (controls.Up == 1 && controls.Left == 0 && controls.Right == 0)
              frontWheel += Math.round(Math.random()) == 1 ? ((Math.random() * 20) / 100) + 0.1 : 0;
 
          // Analayze if player is on ground or in air
-        if (frontWheel - 15 > this.y) {
-            this.ySpeed += 0.1;
-            this.grounded = false;
-        } else {
-            this.ySpeed -= this.y - (frontWheel - 15);
-            this.y = frontWheel - 15;
-            this.grounded = true;
+         const off = (frontWheel - 15);
+
+         if (!isNaN(off)) {
+            if (off> this.y) {
+                this.ySpeed += 0.1;
+                this.grounded = false;
+            } else {
+                this.ySpeed -= this.y - off;
+                this.y = off;
+    
+                this.grounded = true;
+            }
         }
 
          // Perform stunt trick or init crash
-        var crashed = false;
-        var popSize = this.popups.length;
+        var crashed = this.grounded && Math.abs(this.rotation) > Math.PI * 0.5;
 
-        if (this.doingTrick) {
-            if (this.grounded) {
-                crashed = true;
-            } else if(controls.Trick == 0) {
-                this.w = 30, this.h = 30;
-                this.img.src = '/resources/biker/biker.png';
-                this.doingTrick = false;
-            } else {
-                // Hold trick for points
-                if (this.trickCounter < 25) {
-                    this.trickCounter += 1;
+        if (!crashed) {
+            var popSize = this.popups.length;
+
+            if (this.doingTrick) {
+                if (this.grounded) {
+                    crashed = true;
+                } else if(controls.Trick == 0) {
+                    this.w = 30, this.h = 30;
+                    this.img.src = '/resources/biker/biker.png';
+                    this.doingTrick = false;
                 } else {
-                    // Successfully doing trick
+                    // Hold trick for points
+                    if (this.trickCounter < 25) {
+                        this.trickCounter += 1;
+                    } else {
+                        // Successfully doing trick
+                        this.trickCounter = 0;
+                        score = score + 250;
+                        const px = this.x + (Math.round(Math.random()) == 1 ? random(-60, -45) : random(15, 30));
+                        this.popups[popSize == 0 ? 0 : popSize+= 1] = new Popup("+250", px, this.y - random(15, 30));
+                    }
+                }
+            } else if (!this.grounded) {
+                if(controls.Trick == 1) {
+                    this.w = 33, this.h = 33;
+                    this.img.src = '/resources/biker/biker_trick.png';
+                    this.doingTrick = true;
                     this.trickCounter = 0;
-                    score = score + 250;
-                    const px = this.x + (Math.round(Math.random()) == 1 ? random(-60, -45) : random(15, 30));
-                    this.popups[popSize == 0 ? 0 : popSize+= 1] = new Popup("+250", px, this.y - random(15, 30));
                 }
             }
-        } else if (!this.grounded) {
-            if(controls.Trick == 1) {
-                this.w = 33, this.h = 33;
-                this.img.src = '/resources/biker/biker_trick.png';
-                this.doingTrick = true;
-                this.trickCounter = 0;
-            }
         }
-
 
         // Spawn debris
         const accelerating = player.grounded && gasoline > 0 && controls.Up == 1;
@@ -129,9 +168,9 @@ var player = new function() {
 
         // End game
         if (gameOver || crashed || outOfGas || distanceTraveled < -250
-            || this.grounded && Math.abs(this.rotation) > Math.PI * 0.5
             || ((distanceTraveled > runwayLength && distanceTraveled < runwayLength + 10) && this.grounded && this.xSpeed < 0.009)) {                
             // Reset controls
+
             controls.Up = 0;
             controls.Down = 0;
 
@@ -153,8 +192,9 @@ var player = new function() {
                 }
                 
                 // Set audio to end
-                audio.loop = false;
                 audio.currentTime = 112;
+                audio.loop = false;
+
                 accel_sfx.pause();
             }
 
@@ -260,9 +300,10 @@ function random(min, max) {
 }
 
 // Background
-const gradient = ctx.createRadialGradient(250, 175, 500, 90, 60, 100);
-gradient.addColorStop(0, '#0033FF');
-gradient.addColorStop(1, '#33FFFF');
+var gradient = ctx.createLinearGradient(0, 0, 0, 170);
+gradient.addColorStop(0, "#ff99cc");
+gradient.addColorStop(1, "#33ccff");
+
 
 // Pop up / debris objects
 function Popup(pt, px, py) { this.text = pt, this.x = px, this.y = py; }
@@ -284,7 +325,7 @@ function GameObject(isCloud, iimg, moveSpeed, ix, iy, iw, ih) {
 }
 
 // Game statistics
-const runwayLength = 600;
+const runwayLength = width;
 
 var distanceTraveled = 0;
 var crashOffset = 0;
@@ -313,7 +354,7 @@ function loop() {
         ctx.fillRect(0, 0 , c.width, c.height);  
 
         // Spawn clouds + jerry cans
-        const laps = distanceTraveled / c.width;
+        const laps = distanceTraveled / 500;
 
         var cloudCount = clouds.length;
         const noClouds = cloudCount == 0;
@@ -429,9 +470,14 @@ function loop() {
         // Generate terrain
         for (let drawX = 0; drawX < c.width; drawX++) {
             const disX = distanceTraveled + drawX;
-            const seed = disX < runwayLength * 1.42 ? 100 : c.height - noise(disX)
-                 * (0.25  * (disMultiplier < 1 ? 1 : disMultiplier));
-
+            var seed =  disX - player.x < runwayLength ? 100 :  -1;
+            
+            if (seed == -1) {                
+                seed =  c.height - noise(disX) * (0.25  * (disMultiplier < 1 ? 1 : disMultiplier));
+                if (seedX == -1 || drawX == Math.round(player.x)) {
+                    seedX = seed;
+                }
+            }
             ctx.lineTo(drawX, seed);
         }
 
@@ -468,26 +514,6 @@ function loop() {
     requestAnimationFrame(loop);
 }
 
-// Game Audio
-const audio = new Audio('/resources/audio/background_music_compressed.mp3');
-audio.volume = 0.35;
-audio.loop = true;
-
-const accel_sfx = new Audio('/resources/audio/motobike_accelerate.mp3');
-accel_sfx.loop = true;
-
-function fadeOut(p_audio){  
-    var actualVolume = p_audio.volume;
-    var fadeOutInterval = setInterval(function(){
-        actualVolume = (parseFloat(actualVolume) - 0.1).toFixed(1);
-        if(actualVolume >= 0){
-            p_audio.volume = actualVolume;
-        } else {
-            p_audio.pause();
-            clearInterval(fadeOutInterval);
-        }
-    }, 100);
-}
 
 // Player control - tracks status of button press
 var controls = {Up:0, Down:0, Left:0, Right:0, Trick:0};
@@ -520,8 +546,8 @@ goImg.src = '/resources/controls/mobile_go.png';
 function updateKey(key, status) {
     if (!gameOver) {
         // Play music when user interacts with page
-        if (audio.paused)
-            audio.play();
+        //if (audio.currentTime == 0)
+        //    audio.play();
 
         switch(key){
             case 'ArrowUp':
@@ -586,5 +612,9 @@ function replay() {
     audio.loop = true;
 
     // Restore submit score form
-    document.getElementById('hiscores').innerHTML = document.getElementById('form_holder').innerHTML;
+    const savedForm = document.getElementById('form_holder').innerHTML;
+    if (savedForm != '') {
+        document.getElementById('leaderboard_title').innerHTML = "<u>Hiscores</u>";
+        document.getElementById('hiscores').innerHTML = savedForm;
+    }
 }
