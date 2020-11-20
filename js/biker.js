@@ -1,4 +1,4 @@
-// Init graphics
+// Define canvas
 var c = document.createElement('canvas');
 var ctx = c.getContext('2d');
 
@@ -9,6 +9,111 @@ c.width = width;
 c.height = height;
 document.body.appendChild(c);
 
+// Register listener to interact with canvas
+var hoveringControl = false;
+var muteAudio = false;
+
+function getMousePos(canvas, e) {
+    var rect = c.getBoundingClientRect();
+    return {
+        x: (e.changedTouches ? e.changedTouches[0].clientX : e.clientX) - rect.left,
+        y: (e.changedTouches ? e.changedTouches[0].clientY : e.clientY) - rect.top
+    };
+}
+ 
+
+function isHovering(mx, my,x, y, w, h) {
+    if (mx < x + w   && mx > x - w / 3)
+        if (my < y + h  && my > y - h / 3)
+            return true;
+    return false;
+}
+
+function mouseMove(evt) {
+    hoveringControl = false;
+
+    mousePos = getMousePos(c, evt);
+    const x = mousePos.x, y = mousePos.y;
+
+    // Hover control diagrams (audio / pc controls)
+    const diagrams = controlDiagrams.length;
+
+    for (var d = 0; d < diagrams; d++) {
+        const control = controlDiagrams[d];
+
+        if (isHovering(x, y, control.x, control.y, control.w, control.h)) {
+            switch(d) {
+                case 0:
+                hoveringControl = 'AUDIO';
+                break;
+            }
+        }
+    }
+
+    // Hover static control displays (mobile controls)
+    if (!hoveringControl && usingMobile) {
+        evt.preventDefault();
+        console.log('UX: ' + upPos.x + ' | UY: ' + upPos.y);
+
+        if (isHovering(x, y, upPos.x, upPos.y, 45, 45)) {
+            hoveringControl = 'UP';
+        } else if (isHovering(x, y, downPos.x, downPos.y, 45, 45)) {
+            hoveringControl = 'DOWN';
+        } else if (isHovering(x, y, leftPos.x, leftPos.y, 45, 45)) {
+            hoveringControl = 'LEFT';
+        } else if (isHovering(x, y, rightPos.x, rightPos.y, 45, 45)) {
+            hoveringControl = 'RIGHT';
+        }
+    }
+
+    c.style.cursor = hoveringControl ? 'pointer' : 'default';
+}
+
+c.addEventListener('mousemove', event => mouseMove(event), false);
+
+function mouseClick(evt, down) {
+    if (usingMobile) {
+        mouseMove(evt);
+    }
+
+    if (hoveringControl == false)
+        return;
+    else {
+        console.log('Click: ' + hoveringControl);
+
+        switch (hoveringControl) {
+            case 'AUDIO':
+                if (!down)
+                    return;
+
+                if (muteAudio = !muteAudio)
+                    audio.pause();
+                else
+                    audio.play();
+
+                audioImg.src = '/resources/controls/audio_' + (muteAudio ? 'off' : 'on') + '.png';
+                break;
+            case 'LEFT':
+                controls.Left = down ? 1 : 0;
+                break;
+            case 'RIGHT':
+                controls.Right = down ? 1 : 0;
+                break;
+            case 'UP':
+                controls.Up = down ? 1 : 0;;
+                break;
+            case 'DOWN':
+                controls.Down = down ? 1 : 0;
+                break;
+        }
+    }
+}
+
+c.addEventListener('mousedown',  event => mouseClick(event, true));
+c.addEventListener('mouseup', event => mouseClick(event, false));
+
+c.addEventListener('touchstart',  event => mouseClick(event, true));
+c.addEventListener('touchend',  event => mouseClick(event, false));
 
 // Terrain generation | Credits: k3dev (https://www.youtube.com/watch?v=MW8HcwHK1S0)
 var perm = [];
@@ -334,6 +439,35 @@ var score = 0;
 
 var gameOver = false;
 
+// Mobiles controls
+function Position(px, py) {
+    this.x = px;
+    this.y = py;
+}
+
+const upImg = new Image(),  downImg = new Image();
+const leftImg = new Image(),  rightImg = new Image();
+
+upImg.src = '/resources/controls/mobile_up.png';
+downImg.src = '/resources/controls/mobile_down.png';
+
+leftImg.src = '/resources/controls/mobile_left.png';
+rightImg.src = '/resources/controls/mobile_right.png';
+
+const upPos = new Position(c.width / 4, c.height - (c.height / 4));
+const downPos = new Position(upPos.x - 100, upPos.y);
+
+const leftPos = new Position(c.width - (c.width / 4) - 50, upPos.y);
+const rightPos = new Position(leftPos.x + 100, upPos.y);
+
+// Control info diagrams
+var controlDiagrams = new Array();
+
+const audioImg = new Image();
+audioImg.src = '/resources/controls/audio_on.png';
+controlDiagrams[0] = new GameObject(false, audioImg, 0,  rightPos.x, 130, 45, 45);
+
+
 // Game go brr
 function loop() {
     if (!gameOver || (player.grounded && player.xSpeed > 0.015)) {
@@ -393,36 +527,6 @@ function loop() {
                 cloudCount += 1;
             }
         }
-        
-
-        // Draw game objects
-        const objsToDraw = cloudCount + canCount;
-
-        for (var toDraw = 0; toDraw < objsToDraw; toDraw++) {
-            const drawingClouds = cloudCount > 0 && toDraw < cloudCount;
-            const objIndex =  drawingClouds ? toDraw : toDraw - cloudCount;
-            const gameObject = (drawingClouds ? clouds: jerryCans)[objIndex];
-
-            // Remove object if out of view
-             if (gameObject == undefined || gameObject.x + gameObject.w <= 10) {
-                (drawingClouds ? clouds: jerryCans).splice(objIndex, 1);
-                continue;
-            }
-
-            // Jerry can collision detection
-            if (!gameObject.cloud) {
-                if (player.x > gameObject.x - 30  && player.x < gameObject.x + 30) {
-                    if (player.y > gameObject.y - 30 && player.y < gameObject.y + 30) {
-                        jerryCans.splice(objIndex, 1);
-                        gasoline = gasoline + 50 > 125 ? 125 : gasoline + 50;
-                        continue;
-                    }
-                }
-            }
-
-            gameObject.x -= (player.xSpeed + gameObject.speed) * (gameObject.cloud ? 2.5 : 4);
-            ctx.drawImage(gameObject.img, gameObject.x, gameObject.y, gameObject.w, gameObject.h);
-        }
 
         // Draw debris + popups
         ctx.fillStyle = 'black';
@@ -470,23 +574,71 @@ function loop() {
         // Generate terrain
         for (let drawX = 0; drawX < c.width; drawX++) {
             const disX = distanceTraveled + drawX;
-            var seed =  disX - player.x < runwayLength ? 100 :  -1;
-            
+            const doff = disX - player.x;
+
+            var seed =  doff < runwayLength ? 100 :  -1;
+
             if (seed == -1) {                
                 seed =  c.height - noise(disX) * (0.25  * (disMultiplier < 1 ? 1 : disMultiplier));
+               
                 if (seedX == -1 || drawX == Math.round(player.x)) {
                     seedX = seed;
                 }
+                ctx.lineTo(drawX, seed);
+            } else {
+                ctx.lineTo(drawX, seed);
             }
-            ctx.lineTo(drawX, seed);
         }
 
         // Draw terrain
         ctx.lineTo(c.width, c.height);
         ctx.fill();
 
+        // Draw game objects
+        const diagrams = controlDiagrams.length;
+        const objsToDraw = diagrams + cloudCount + canCount;
+
+        for (var toDraw = 0; toDraw < objsToDraw; toDraw++) {
+            const drawingDiagrams = diagrams > 0 && toDraw < diagrams;
+            const drawingClouds = cloudCount > 0 && toDraw - diagrams < cloudCount;
+
+            const objIndex =  drawingDiagrams ? toDraw : drawingClouds ? toDraw - diagrams : toDraw - diagrams - cloudCount;
+            const gameObject = (drawingDiagrams ? controlDiagrams : drawingClouds ? clouds: jerryCans)[objIndex];
+
+            // Remove object if out of view
+             if (gameObject == undefined || gameObject.x + gameObject.w <= 10) {
+                (drawingDiagrams ? controlDiagrams : drawingClouds ? clouds: jerryCans).splice(objIndex, 1);
+                continue;
+            }
+
+            // Jerry can collision detection
+            if (!gameObject.cloud) {
+                if (player.x > gameObject.x - 30  && player.x < gameObject.x + 30) {
+                    if (player.y > gameObject.y - 30 && player.y < gameObject.y + 30) {
+                        jerryCans.splice(objIndex, 1);
+                        gasoline = gasoline + 50 > 125 ? 125 : gasoline + 50;
+                        continue;
+                    }
+                }
+            }
+
+            // width == 45 is audio diagram, jerry cans width are 30
+            gameObject.x -= (player.xSpeed + gameObject.speed) * (gameObject.cloud ? 2.5 : gameObject.w == 45 ? 6 : 4);
+            ctx.drawImage(gameObject.img, gameObject.x, gameObject.y, gameObject.w, gameObject.h);
+        }
+
+
          // Draw player
          player.update();
+
+        // Draw controls
+        if (usingMobile) {
+            ctx.drawImage(upImg, upPos.x, upPos.y, 45, 45);
+            ctx.drawImage(downImg, downPos.x, downPos.y, 45, 45);
+
+            ctx.drawImage(leftImg, leftPos.x, leftPos.y, 45, 45);
+            ctx.drawImage(rightImg, rightPos.x, rightPos.y, 45, 45);
+        }
 
          // Draw score
          ctx.font = "Verdana Bold";
@@ -505,15 +657,9 @@ function loop() {
          ctx.strokeRect(10, 15, 125, 15);
     }
 
-    // Draw mobile controls
-    if (usingMobile) {
-        ctx.drawImage(c.width - 100, c.height - 50, 75, 75);
-    }
-
     // Update canvas
     requestAnimationFrame(loop);
 }
-
 
 // Player control - tracks status of button press
 var controls = {Up:0, Down:0, Left:0, Right:0, Trick:0};
@@ -535,19 +681,22 @@ var isMobile = {
         return navigator.userAgent.match(/IEMobile/i) || navigator.userAgent.match(/WPDesktop/i);
     },
     any: function() {
-        return (isMobile.Android() || isMobile.BlackBerry() || isMobile.iOS() || isMobile.Opera() || isMobile.Windows()) ? true : false;
+        return (isMobile.Android() || isMobile.BlackBerry() || isMobile.iOS() || isMobile.Opera() || isMobile.Windows());
     }
 };
 
 const usingMobile = isMobile.any();
-const goImg = new Image();
-goImg.src = '/resources/controls/mobile_go.png';
+
+// Force zoom-out on mobile
+if (usingMobile) {
+    document.body.style.zoom = 1.0;
+}
 
 function updateKey(key, status) {
     if (!gameOver) {
         // Play music when user interacts with page
-        //if (audio.currentTime == 0)
-        //    audio.play();
+        if (!muteAudio && audio.currentTime == 0)
+            audio.play();
 
         switch(key){
             case 'ArrowUp':
@@ -587,10 +736,6 @@ function updateKey(key, status) {
 onkeydown = e => { updateKey(e.key, 1) };
 onkeyup = e => { updateKey(e.key, 0) };
 
-
-// It's alive!
-loop();
-
 // Reset game
 function replay() {
     player.imgBiker = null, player.backdrop = new Image(), player.img = new Image();
@@ -618,3 +763,6 @@ function replay() {
         document.getElementById('hiscores').innerHTML = savedForm;
     }
 }
+
+// It's alive!
+loop();
