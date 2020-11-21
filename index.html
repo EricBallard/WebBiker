@@ -10,18 +10,11 @@
 <body> 
     <!-- Game -->
     <canvas id="canvas"></canvas>
-    <script>
-        // Define canvas in js environment and dynamically size
-        const c = document.getElementById('canvas');
-        c.width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
-        c.height = ((window.innerWidth > 0) ? window.innerHeight : screen.height) / 2;
-    </script>
-
-    <!-- Game Util -->
     <script src ="/js/audio.js"></script>
     <script src ="/js/controls.js"></script>
     <script src ="/js/player.js"></script>
     <script src ="/js/webbiker.js"></script>
+    
 
     <!-- Score Util -->
     <script src ="/js/scores.js"></script>
@@ -32,13 +25,12 @@
 
         <div class="hiscores" id="hiscores">
             <form class ="submitscore" hidden=true>
-                <br>
                 <label for="name_input">Initials</label>
                 <input type="text" id="name_input"  maxlength="3" oninput="updateSubmitBtn()">
-                
+                <button type ="button" id="submit_input" onclick="submitScore()" disabled=true>Submit Score</button>
                 <br>
-                <button type ="button" id="submit_input" onclick="submitScore()" disabled=true>Submit</button>
-                <br>
+                <button type ="button" id="view_scores" onclick="fetchHiscores()">View Hiscores</button>
+                <br><br>
             </form> 
         </div>
 

@@ -79,11 +79,58 @@ var controlDiagrams = new Array();
 
 const audioImg = new Image();
 audioImg.src = '/resources/controls/audio_on.png';
-controlDiagrams[0] = new GameObject(false, audioImg, 0,  rightPos.x, 130, 45, 45);
+controlDiagrams[0] = new GameObject(false, audioImg, 0,  rightPos.x, 130, 60, 60);
+
+// Show trick info popup
+player.popups[0] = new Popup((usingMobile ? 'Double-tap and Hold' : 'Hold Spacebar') + ' in the air for extra points!', upPos.x, 115);
+
+// Spawn pc control info
+if (!usingMobile) {
+    const keysImg = new Image();
+    keysImg.src = '/resources/controls/pc_controls.png';
+    controlDiagrams[1] = new GameObject(false, keysImg, 0,  downPos.x, c.height - (c.height / 2), 200, 200);
+}
+
+// Detect mobile orientation change
+var usingPortait = false;
+
+window.onresize = event => {
+    if (usingMobile) {
+        if (usingPortait) {
+             // User has rotated phone to landscape
+             window.location.reload();
+        } else if (score < 1) {
+            sizeCanvas();
+        }
+    }
+}
 
 // Game go brr
 function loop() {
     if (!gameOver || (player.grounded && player.xSpeed > 0.015)) {
+         // Canvas background
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0 , c.width, c.height);  
+
+        if(usingMobile && (usingPortait || (window.innerHeight > window.innerWidth && score < 1))){
+            // Mobile device is in portait mode (boo) - require landscape to play game
+
+            // Inform user
+            ctx.fillStyle = 'Black';
+            ctx.font = "40px Verdana Bold";
+
+            ctx.save();
+            ctx.translate(c.width / 2 , c.height / 2);
+            ctx.rotate(Math.PI/2);
+            ctx.textAlign = "center";
+            ctx.fillText('Rotate your device to play!', 0, 0);
+            ctx.restore();
+
+            if (!usingPortait)
+                usingPortait = true;
+            return;
+        }
+
         // Calculate players speed and relative distance traveled
         const disMultiplier = (distanceTraveled / 20000);
         const speedMultiplier = (player.grounded || player.xSpeed  > 0.15 ? controls.Up - (player.grounded ? controls.Down : 0) : 0)
@@ -95,10 +142,6 @@ function loop() {
         // Score
         const traveled = (distanceTraveled - runwayLength);
         score = (traveled < 1 ? 0 : score + momentum);
-
-        // Canvas background
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0 , c.width, c.height);  
 
         // Spawn clouds + jerry cans
         const laps = distanceTraveled / 500;
@@ -151,34 +194,47 @@ function loop() {
             const objIndex =  drawingPopup ? toDraw : toDraw - popSize;
 
             const drawable = (drawingPopup ? player.popups : player.debris)[objIndex];
-            var isDebris = false;
 
             // Remove if out of view 
-            if (drawable == undefined ||
-                 player.x - drawable.x > ((isDebris = Particle.prototype.isPrototypeOf(drawable) || (player.grounded && player.xSpeed < 0.25)) ? random(25, 200) : random(100, 400))) {
-               
+
+            let remove = drawable == undefined;
+            let isTrickInfo;
+
+            if (!remove && !(isTrickInfo = drawingPopup && score < 3000 && drawable.text.includes('points')))
+                 remove = player.x - drawable.x > ((Particle.prototype.isPrototypeOf(drawable) || (player.grounded && player.xSpeed < 0.25)) ? random(25, 200) : random(100, 400));
+            else if (isTrickInfo)
+                remove = drawable.y < -15;
+            
+            if (remove) {
                 (drawingPopup ? player.popups: player.debris).splice(objIndex, 1);
                 continue;
             }
 
-            drawable.x -= (player.xSpeed * random(1, 5)) + .5;
-            drawable.y -= 0.1;
+            
+            if (isTrickInfo) {
+                drawable.y -= (player.xSpeed / 2) + .2;
+            } else {
+                drawable.x -= (player.xSpeed * random(1, 5)) + .5;
+                drawable.y -= 0.1;
+            }
 
             // Draw debris
-            if (isDebris) {
+            if (!drawingPopup) {
                 ctx.beginPath();
                 ctx.arc(drawable.x, drawable.y, drawable.size, 0, Math.PI * 2, true);
                 ctx.fill();
             } else {
+
+                if (isTrickInfo)
+                    ctx.fillStyle = 'gray';
+
                 // Draw popups
                 ctx.fillText(drawable.text, drawable.x, drawable.y);
+
+                if (isTrickInfo)
+                    ctx.fillStyle = 'black';
             }
         }
-
-        // Canvas border
-        ctx.lineWidth = 10;
-        ctx.strokeStyle = 'black';
-        ctx.strokeRect(0, 0, c.width, c.height);
 
         // Init terrain generation
         ctx.beginPath();
@@ -235,39 +291,43 @@ function loop() {
                 }
             }
 
-            // width == 45 is audio diagram, jerry cans width are 30
-            gameObject.x -= (player.xSpeed + gameObject.speed) * (gameObject.cloud ? 2.5 : gameObject.w == 45 ? 6 : 4);
+            // width == 60 is audio diagram, jerry cans width are 30
+            gameObject.x -= (player.xSpeed + gameObject.speed) * (gameObject.cloud ? 2.5 : gameObject.w == 60 ? 6 : 4);
             ctx.drawImage(gameObject.img, gameObject.x, gameObject.y, gameObject.w, gameObject.h);
         }
 
+        // Canvas border
+        ctx.lineWidth = 10;
+        ctx.strokeStyle = 'black';
+        ctx.strokeRect(0, 0, c.width, c.height);
 
-         // Draw player
-         player.update();
+        // Draw player
+        player.update();
 
         // Draw controls
         if (usingMobile) {
-            ctx.drawImage(upImg, upPos.x, upPos.y, 45, 45);
-            ctx.drawImage(downImg, downPos.x, downPos.y, 45, 45);
+            ctx.drawImage(upImg, upPos.x, upPos.y, 60, 60);
+            ctx.drawImage(downImg, downPos.x, downPos.y, 60, 60);
 
-            ctx.drawImage(leftImg, leftPos.x, leftPos.y, 45, 45);
-            ctx.drawImage(rightImg, rightPos.x, rightPos.y, 45, 45);
+            ctx.drawImage(leftImg, leftPos.x, leftPos.y, 60, 60);
+            ctx.drawImage(rightImg, rightPos.x, rightPos.y, 60, 60);
         }
 
          // Draw score
          ctx.font = "Verdana Bold";
-         ctx.fillText('SCORE: ' + Math.round(score), 10, 50)
+         ctx.fillText('SCORE: ' + Math.round(score), downPos.x, 50)
 
          // Draw fuel level
          ctx.fillStyle = 'gray';
-        ctx.fillRect(10, 16, gasoline, 13);
+        ctx.fillRect(downPos.x, 16, gasoline, 13);
 
         ctx.fillStyle = 'black';
         ctx.font = "1.05rem Verdana";
-        ctx.fillText('GASOLINE', 12.5, 28.5)
+        ctx.fillText('GASOLINE', downPos.x, 28.5)
 
          // Draw fuel guage
          ctx.lineWidth = 2;
-         ctx.strokeRect(10, 15, 125, 15);
+         ctx.strokeRect(downPos.x, 15, 125, 15);
     }
 
     // Update canvas
@@ -278,6 +338,7 @@ function loop() {
 function replay() {
     player.imgBiker = null, player.backdrop = new Image(), player.img = new Image();
     player.popups = new Array(), player.debris = new Array(), clouds = new Array(), jerryCans = new Array();
+    player.popups[0] = new Popup((usingMobile ? 'Double-tap and Hold' : 'Hold Spacebar') + ' in the air for extra points!', upPos.x, 115);
 
     controls = {Up:0, Down:0, Left:0, Right:0, Trick:0};
     player.backdrop.src = '/resources/etc/highlight_drop.png';
@@ -294,8 +355,11 @@ function replay() {
     audio.currentTime = 0;
     audio.loop = true;
 
-    // Restory audio controls
-    controlDiagrams[0] = new GameObject(false, audioImg, 0,  rightPos.x, 130, 45, 45);
+    // Restore control diagrams
+    controlDiagrams[0] = new GameObject(false, audioImg, 0,  rightPos.x, 130, 60, 60);
+
+    if (!usingMobile)
+        controlDiagrams[1] = new GameObject(false, keysImg, 0,  downPos.x, c.height - (c.height / 2), 200, 200);
 
     // Restore submit score form
     const savedForm = document.getElementById('form_holder').innerHTML;
