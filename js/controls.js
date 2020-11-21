@@ -1,3 +1,4 @@
+
 // Player control - tracks status of button press
 var controls = {Up:0, Down:0, Left:0, Right:0, Trick:0};
 
@@ -28,6 +29,19 @@ const usingMobile = isMobile.any();
 var hoveringControl = false;
 
 var muteAudio = false;
+
+
+// Define canvas in js environment and dynamically size
+const c = document.getElementById('canvas');
+
+function sizeCanvas() {
+    const cW =  (window.innerWidth > 0) ? window.innerWidth : screen.width;
+    const cH =  ((window.innerWidth > 0) ? window.innerHeight : screen.height) / (usingMobile ? 1 : 1.5);
+    c.width = cW < 300 ? 300 : cW;
+    c.height = cH < 150 ? 150 : cH;
+}
+
+sizeCanvas();
 
 // Accelerate and play sfx
 function accelerate(status) {
@@ -122,13 +136,13 @@ function move(evt) {
         if (!hoveringControl) {
             evt.preventDefault();
 
-            if (isHovering(x, y, upPos.x, upPos.y, 45, 45)) {
+            if (isHovering(x, y, upPos.x, upPos.y, 60, 60)) {
                 hoveringControl = 'UP';
-            } else if (isHovering(x, y, downPos.x, downPos.y, 45, 45)) {
+            } else if (isHovering(x, y, downPos.x, downPos.y, 60, 60)) {
                 hoveringControl = 'DOWN';
-            } else if (isHovering(x, y, leftPos.x, leftPos.y, 45, 45)) {
+            } else if (isHovering(x, y, leftPos.x, leftPos.y, 60, 60)) {
                 hoveringControl = 'LEFT';
-            } else if (isHovering(x, y, rightPos.x, rightPos.y, 45, 45)) {
+            } else if (isHovering(x, y, rightPos.x, rightPos.y, 60, 60)) {
                 hoveringControl = 'RIGHT';
             }
         }
@@ -137,14 +151,45 @@ function move(evt) {
     }
 }
 
+// Track double-taps on mobile
+var lastTouch = undefined;
+var doubleTapping = false;
+
 // Click UI elements
 function click(evt, down) {
     if (usingMobile)
         move(evt);
 
-    if (hoveringControl == false)
+    if (hoveringControl == false) {
+        if (usingMobile) {
+            if (!down) {
+                if (doubleTapping) {
+                    doubleTapping = false;
+                    controls.Trick = 0;
+                }
+                return;
+            }
+
+            // Listen for double-taps
+            const now = new Date().getTime();
+
+            if (lastTouch == undefined) {
+                lastTouch = now;
+                return;
+            }
+
+            let timeDiff = now - lastTouch;
+            
+            // User has double-tapped
+            if (timeDiff > 0 && timeDiff < 500) {
+                doubleTapping = true;
+                controls.Trick = 1;
+            }
+    
+            lastTouch = undefined;
+        }
         return;
-    else {
+    } else {
         switch (hoveringControl) {
             case 'AUDIO':
                 if (down)
