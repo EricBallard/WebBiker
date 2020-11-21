@@ -9,7 +9,19 @@
 
 <body> 
     <!-- Game -->
-    <script src ="/js/biker.js"></script>
+    <canvas id="canvas"></canvas>
+    <script>
+        // Define canvas in js environment and dynamically size
+        const c = document.getElementById('canvas');
+        c.width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
+        c.height = ((window.innerWidth > 0) ? window.innerHeight : screen.height) / 2;
+    </script>
+
+    <!-- Game Util -->
+    <script src ="/js/audio.js"></script>
+    <script src ="/js/controls.js"></script>
+    <script src ="/js/player.js"></script>
+    <script src ="/js/webbiker.js"></script>
 
     <!-- Score Util -->
     <script src ="/js/scores.js"></script>
