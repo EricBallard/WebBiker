@@ -35,25 +35,9 @@ function mouseMove(evt) {
     mousePos = getMousePos(c, evt);
     const x = mousePos.x, y = mousePos.y;
 
-    // Hover control diagrams (audio / pc controls)
-    const diagrams = controlDiagrams.length;
-
-    for (var d = 0; d < diagrams; d++) {
-        const control = controlDiagrams[d];
-
-        if (isHovering(x, y, control.x, control.y, control.w, control.h)) {
-            switch(d) {
-                case 0:
-                hoveringControl = 'AUDIO';
-                break;
-            }
-        }
-    }
-
     // Hover static control displays (mobile controls)
-    if (!hoveringControl && usingMobile) {
+    if (usingMobile) {
         evt.preventDefault();
-        console.log('UX: ' + upPos.x + ' | UY: ' + upPos.y);
 
         if (isHovering(x, y, upPos.x, upPos.y, 45, 45)) {
             hoveringControl = 'UP';
@@ -63,6 +47,23 @@ function mouseMove(evt) {
             hoveringControl = 'LEFT';
         } else if (isHovering(x, y, rightPos.x, rightPos.y, 45, 45)) {
             hoveringControl = 'RIGHT';
+        }
+    }
+
+    // Hover control diagrams (audio / pc controls)
+    if (!hoveringControl) {
+        const diagrams = controlDiagrams.length;
+
+        for (var d = 0; d < diagrams; d++) {
+            const control = controlDiagrams[d];
+
+            if (isHovering(x, y, control.x, control.y, control.w, control.h)) {
+                switch(d) {
+                    case 0:
+                    hoveringControl = 'AUDIO';
+                    break;
+                }
+            }
         }
     }
 
@@ -79,11 +80,11 @@ function mouseClick(evt, down) {
     if (hoveringControl == false)
         return;
     else {
-        console.log('Click: ' + hoveringControl);
+        console.log(evt +  '  | Down: ' + down + ' | Click: ' + hoveringControl);
 
         switch (hoveringControl) {
             case 'AUDIO':
-                if (!down)
+                if (down)
                     return;
 
                 if (muteAudio = !muteAudio)
@@ -100,7 +101,7 @@ function mouseClick(evt, down) {
                 controls.Right = down ? 1 : 0;
                 break;
             case 'UP':
-                controls.Up = down ? 1 : 0;;
+                accelerate(down ? 1 : 0);
                 break;
             case 'DOWN':
                 controls.Down = down ? 1 : 0;
@@ -692,27 +693,32 @@ if (usingMobile) {
     document.body.style.zoom = 1.0;
 }
 
-function updateKey(key, status) {
-    if (!gameOver) {
+function accelerate(status) {
+    if (gasoline < 1)
+        status = 0;
+    else {
         // Play music when user interacts with page
         if (!muteAudio && audio.currentTime == 0)
             audio.play();
 
+        // Accelerate sfx
+        if (!muteAudio && status == 1) {
+            accel_sfx.currentTime = 0;
+            accel_sfx.volume = 0.4;
+            accel_sfx.play();
+        } else if (!accel_sfx.paused) {
+            fadeOut(accel_sfx);
+        }
+    }
+
+    controls.Up = status;
+}
+
+function updateKey(key, status) {
+    if (!gameOver) {
         switch(key){
             case 'ArrowUp':
-                if (gasoline < 1)
-                    status = 0;
-
-                // Accelerate sfx
-                if (status == 1) {
-                    accel_sfx.currentTime = 0;
-                    accel_sfx.volume = 0.4;
-                    accel_sfx.play();
-                } else {
-                    fadeOut(accel_sfx);
-                }
-
-                controls.Up = status;
+                accelerate(status);
                 break;
             case 'ArrowDown':
                 controls.Down = status;
@@ -755,6 +761,9 @@ function replay() {
     leaderboard.style.display = 'none';
     audio.currentTime = 0;
     audio.loop = true;
+
+    // Restory audio controls
+    controlDiagrams[0] = new GameObject(false, audioImg, 0,  rightPos.x, 130, 45, 45);
 
     // Restore submit score form
     const savedForm = document.getElementById('form_holder').innerHTML;
