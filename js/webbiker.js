@@ -86,9 +86,9 @@ player.popups[0] = new Popup((usingMobile ? 'Double-tap and Hold' : 'Hold Spaceb
 
 // Spawn pc control info
 if (!usingMobile) {
-    const keysImg = new Image();
-    keysImg.src = '/resources/controls/pc_controls.png';
-    controlDiagrams[1] = new GameObject(false, keysImg, 0,  downPos.x, c.height - (c.height / 2), 200, 200);
+    this.keysImg = new Image();
+    this.keysImg.src = '/resources/controls/pc_controls.png';
+    controlDiagrams[1] = new GameObject(false, this.keysImg, 0,  downPos.x, c.height - (c.height / 2), 200, 200);
 }
 
 // Detect mobile orientation change
@@ -359,7 +359,7 @@ function replay() {
     controlDiagrams[0] = new GameObject(false, audioImg, 0,  rightPos.x, 130, 60, 60);
 
     if (!usingMobile)
-        controlDiagrams[1] = new GameObject(false, keysImg, 0,  downPos.x, c.height - (c.height / 2), 200, 200);
+        controlDiagrams[1] = new GameObject(false, this.keysImg, 0,  downPos.x, c.height - (c.height / 2), 200, 200);
 
     // Restore submit score form
     const savedForm = document.getElementById('form_holder').innerHTML;

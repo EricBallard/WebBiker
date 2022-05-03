@@ -19,6 +19,8 @@ $dbc = new mysqli(
 // Create connection
 $dbc = new mysqli($servername, $username, $password, $database);
 
+set_time_limit(3);
+
 // Check connection
 if ($dbc -> connect_errno) {
     echo "Failed to connect to MySQL: " . $mysqli -> connect_error;
@@ -26,7 +28,7 @@ if ($dbc -> connect_errno) {
 }
 
  // Validate table
- $initTable = "CREATE TABLE IF NOT EXISTS hiscores (
+ $initTable = "CREATE TABLE IF NOT EXISTS records (
     name TEXT NOT NULL,
     score INTEGER,
     PRIMARY KEY(name(3))

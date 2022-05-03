@@ -1,7 +1,7 @@
 <?php
     require 'connect.php';
 
-$query = "SELECT * FROM hiscores ORDER BY score DESC LIMIT 5";
+$query = "SELECT * FROM records ORDER BY score DESC LIMIT 5";
 $result = mysqli_query($dbc, $query) or die("Bad Query: $query");
 
 echo "<table class='queryresults' border='1'>";

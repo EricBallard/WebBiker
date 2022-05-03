@@ -11,7 +11,7 @@ function fetchHiscores() {
             hiscores.innerHTML = this.responseText;
         }
     };
-    xmlhttp.open("GET","/php/view_hiscores.php", true);
+    xmlhttp.open("GET","/php/view_hiscores.php?ajax=1", true);
     xmlhttp.send();
 }
 
@@ -36,7 +36,7 @@ function submitScore() {
             fetchHiscores();
         }
     };
-    xmlhttp.open("GET","/php/submit_score.php?initials=" + initials + "&scoreObtained=" + scoreObtained, true);
+    xmlhttp.open("GET","/php/submit_score.php?initials=" + initials + "&scoreObtained=" + scoreObtained + "?ajax=1", true);
     xmlhttp.send();
 
     document.getElementById('submit_input').disabled = true;
