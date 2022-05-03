@@ -8,6 +8,9 @@ if (!$ajax) {
     exit();
 }
 
+// Set timeout
+set_time_limit(3);
+
 // Create connection
 $dbc = new mysqli(
     getenv("mysql_host"),
@@ -16,24 +19,25 @@ $dbc = new mysqli(
     getenv("mysql_db")
 );
 
-// Create connection
-$dbc = new mysqli($servername, $username, $password, $database);
+//$dbc = new mysqli(
+//    "127.0.0.1",
+//    "user",
+//    "password",
+//    "hiscores"
+//);
 
-set_time_limit(3);
 
 // Check connection
-if ($dbc -> connect_errno) {
-    echo "Failed to connect to MySQL: " . $mysqli -> connect_error;
+if ($dbc->connect_errno) {
+    echo "Failed to connect to MySQL: " . $mysqli->connect_error;
     exit();
 }
 
- // Validate table
- $initTable = "CREATE TABLE IF NOT EXISTS records (
+// Validate table
+$initTable = "CREATE TABLE IF NOT EXISTS records (
     name TEXT NOT NULL,
     score INTEGER,
     PRIMARY KEY(name(3))
 );";
 
 mysqli_query($dbc, $initTable) or die("Bad Query: $initTable");
-
-?> 

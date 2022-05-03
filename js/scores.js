@@ -36,7 +36,7 @@ function submitScore() {
             fetchHiscores();
         }
     };
-    xmlhttp.open("GET","/php/submit_score.php?initials=" + initials + "&scoreObtained=" + scoreObtained + "?ajax=1", true);
+    xmlhttp.open("GET","/php/submit_score.php?initials=" + initials + "&scoreObtained=" + scoreObtained + "&ajax=1", true);
     xmlhttp.send();
 
     document.getElementById('submit_input').disabled = true;
