@@ -1,4 +1,9 @@
 <?php
+// Block ajax request
+if (isset($_SERVER["HTTP_X_REQUESTED_WITH"])) {
+    die();
+}
+
 // Generate JWT
 include "./php/generate_jwt.php";
 

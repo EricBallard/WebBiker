@@ -7,7 +7,7 @@ SetEnv mysql_pass password
 # Re-route unknown request to index
 
 RewriteEngine on
-RewriteCond %{REQUEST_URI} !\.(png|jpe?g|gif|css|js|php)$ [NC]
+RewriteCond %{REQUEST_URI} !\.(png|html|css|js|php)$ [NC]
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^(.*)$ index.html?url=$1 [QSA,L]
+RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]

@@ -8,11 +8,15 @@ if (
     // Bypass check if authenticated
     !isset($_SESSION["VERIFIED"]) &&
 
+    // Is cookie set
     (!isset($_COOKIE["AUTH"]) ||
-        !isset($_SESSION["AUTH"]))/* ||
-    !isset($_SERVER["HTTP_X_REQUESTED_WITH"]) ||
-    strtolower($_SERVER["HTTP_X_REQUESTED_WITH"]) != "xmlhttprequest"*/
+        // Is session initiated
+        !isset($_SESSION["AUTH"]) ||
+        // Is page requested with ajax xmlhttprequest
+        !isset($_SERVER["HTTP_X_REQUESTED_WITH"]) ||
+        strtolower($_SERVER["HTTP_X_REQUESTED_WITH"]) != "xmlhttprequest")
 ) {
+    // One of these condition was not met, deny access
     echo ("<script> window.location.href = '../index.php'; </script>");
     session_destroy();
     die();
