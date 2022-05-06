@@ -1,12 +1,12 @@
 <?php
-    require 'connect.php';
+require 'connect.php';
 
-    // Submit data
-    $initials = $_GET['initials'];
-    $scoreObtained = $_GET['scoreObtained'];
+// Submit data
+$initials = $_GET['initials'];
+$scoreObtained = $_GET['scoreObtained'];
 
-    $query = "INSERT INTO records (name, score) values ('$initials', $scoreObtained) ON DUPLICATE KEY UPDATE score = $scoreObtained";
-    $result = mysqli_query($dbc, $query) or die("Bad Query: $query");
+$query = "INSERT INTO records (name, score) values ('$initials', $scoreObtained) ON DUPLICATE KEY UPDATE score = $scoreObtained";
+$result = mysqli_query($dbc, $query) or die("Failed to submit score!");
 
-    echo "idk bruh wtf";
-?>
+// Close mysql conn
+$dbc->close();

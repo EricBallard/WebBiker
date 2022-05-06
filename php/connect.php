@@ -1,12 +1,30 @@
 <?php
 
-// Block direct access to file, echo js to redirect to index
-$ajax = $_GET['ajax'];
+// Only allow request with header set to ajax
+$ajax_req = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && strtolower($_SERVER["HTTP_X_REQUESTED_WITH"]) == "xmlhttprequest" ? true : false;
 
-if (!$ajax) {
-    echo ("<script> window.location.href = '../index.html'; </script>");
-    exit();
+if (!$ajax_req) {
+    echo "not ajax";
+    echo $_SERVER["HTTP_X_REQUESTED_WITH"];
+    die();
 }
+
+// Resume session
+session_start();
+
+// Check if session token is valid/exist
+if (isset($_SESSION["TOKEN"]) === false) {
+    echo ("<script> window.location.href = '../index.php'; </script>");
+    session_destroy();
+    die();
+}
+
+$jwt = $_SESSION["TOKEN"];
+
+
+// Token is available, verify authenticity
+//TODO
+
 
 // Set timeout
 set_time_limit(3);
@@ -19,18 +37,10 @@ $dbc = new mysqli(
     getenv("mysql_db")
 );
 
-//$dbc = new mysqli(
-//    "127.0.0.1",
-//    "user",
-//    "password",
-//    "hiscores"
-//);
-
-
 // Check connection
 if ($dbc->connect_errno) {
     echo "Failed to connect to MySQL: " . $mysqli->connect_error;
-    exit();
+    die();
 }
 
 // Validate table
@@ -40,4 +50,4 @@ $initTable = "CREATE TABLE IF NOT EXISTS records (
     PRIMARY KEY(name(3))
 );";
 
-mysqli_query($dbc, $initTable) or die("Bad Query: $initTable");
+mysqli_query($dbc, $initTable) or die();

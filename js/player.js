@@ -201,7 +201,7 @@ var player = new function() {
             ctx.translate(this.x + crashOffset, this.y);
 
             // Calculate biker rotation randomly
-            ctx.rotate(this.rotation);
+            ctx.rotate(this.rotation );
 
             ctx.drawImage(this.imgBiker, -15, -15, 20, 20);
             ctx.restore();
