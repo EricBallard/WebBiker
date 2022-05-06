@@ -1,3 +1,9 @@
+function getCookie() {
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${'AUTH'}=`)
+  if (parts.length === 2) return parts.pop().split(';').shift()
+}
+
 function fetchHiscores() {
   var xmlhttp = new XMLHttpRequest()
 
@@ -29,12 +35,23 @@ function updateSubmitBtn() {
   document.getElementById('submit_input').disabled = initials.search(/[^a-zA-Z]+/) != -1 || initials.length < 2
 }
 
+function isBot() {
+  return navigator.webdriver || /bot|googlebot|crawler|spider|robot|curl|crawling/i.test(navigator.userAgent)
+}
+
 function submitScore() {
+  // Anti-tamper detection
+  if (isBot() || window.innerWidth < 400 || window.innerHeight < 400) {
+    fetchHiscores()
+    return
+  }
+
   const initials = document.getElementById('name_input').value,
-    scoreObtained = score
+    scoreObtained = score,
+    jwt = getCookie()
 
   // Ignore scores < 1000, verify initials
-  if (!initials || score < 1000 || initials.length > 3) {
+  if (!initials || !jwt || score < 1000 || initials.length > 3) {
     fetchHiscores()
     return
   }
@@ -45,14 +62,13 @@ function submitScore() {
     if (this.readyState == 4 && this.status == 200) {
       fetchHiscores()
     }
-  }
-  xmlhttp.open(
-    'GET',
-    '/php/submit_score.php?initials=' + initials + '&scoreObtained=' + scoreObtained,
-    true
-  )
 
-  xmlhttp.setRequestHeader('HTTP_X_REQUESTED_WITH', 'xmlhttprequest')
+    console.log(this.response)
+  }
+
+  xmlhttp.open('GET', '/php/submit_score.php?initials=' + initials + '&score=' + scoreObtained + '&auth=' + jwt, true)
+
+  xmlhttp.setRequestHeader('X-Requested-With', 'xmlhttprequest')
   xmlhttp.send()
 
   document.getElementById('submit_input').disabled = true

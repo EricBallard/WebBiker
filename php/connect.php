@@ -1,33 +1,25 @@
 <?php
 
-// Only allow request with header set to ajax
-$ajax_req = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && strtolower($_SERVER["HTTP_X_REQUESTED_WITH"]) == "xmlhttprequest" ? true : false;
-
-if (!$ajax_req) {
-    echo "not ajax";
-    echo $_SERVER["HTTP_X_REQUESTED_WITH"];
-    die();
-}
-
 // Resume session
 session_start();
 
-// Check if session token is valid/exist
-if (isset($_SESSION["TOKEN"]) === false) {
+// Only allow request with header set to ajax with existing session
+if (
+    // Bypass check if authenticated
+    !isset($_SESSION["VERIFIED"]) &&
+
+    (!isset($_COOKIE["AUTH"]) ||
+        !isset($_SESSION["AUTH"]))/* ||
+    !isset($_SERVER["HTTP_X_REQUESTED_WITH"]) ||
+    strtolower($_SERVER["HTTP_X_REQUESTED_WITH"]) != "xmlhttprequest"*/
+) {
     echo ("<script> window.location.href = '../index.php'; </script>");
     session_destroy();
     die();
 }
 
-$jwt = $_SESSION["TOKEN"];
-
-
-// Token is available, verify authenticity
-//TODO
-
-
 // Set timeout
-set_time_limit(3);
+set_time_limit(2);
 
 // Create connection
 $dbc = new mysqli(
@@ -40,10 +32,14 @@ $dbc = new mysqli(
 // Check connection
 if ($dbc->connect_errno) {
     echo "Failed to connect to MySQL: " . $mysqli->connect_error;
+    session_destroy();
     die();
 }
 
-// Validate table
+// Reset verification
+unset($_SESSION["VERIFIED"]);
+
+/* Create table
 $initTable = "CREATE TABLE IF NOT EXISTS records (
     name TEXT NOT NULL,
     score INTEGER,
@@ -51,3 +47,4 @@ $initTable = "CREATE TABLE IF NOT EXISTS records (
 );";
 
 mysqli_query($dbc, $initTable) or die();
+*/
