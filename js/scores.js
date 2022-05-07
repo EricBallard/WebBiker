@@ -1,4 +1,4 @@
-function getCookie() {
+export function getCookie() {
   const value = `; ${document.cookie}`
   const parts = value.split(`; ${'AUTH'}=`)
   if (parts.length === 2) return parts.pop().split(';').shift()
@@ -26,7 +26,7 @@ function fetchHiscores() {
     }
   }
   xmlhttp.open('GET', '/php/view_hiscores.php', true)
-  xmlhttp.setRequestHeader('HTTP_X_REQUESTED_WITH', 'xmlhttprequest')
+  xmlhttp.setRequestHeader('X-Requested-With', 'xmlhttprequest')
   xmlhttp.send()
 }
 

@@ -242,7 +242,7 @@ var player = new function() {
             ctx.translate(this.x, this.y);
         }
 
-        ctx.rotate(this.rotation);
+        ctx.rotate(this.rotation + 0.05);
         ctx.drawImage(this.img, -15, -15, this.w, this.h);
         ctx.restore();
     }
