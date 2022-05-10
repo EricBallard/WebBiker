@@ -1,4 +1,44 @@
+import { GameObject, Particle } from './entity/entities.js'
 import { random } from '../index.js'
+
+// Spawn objects
+var cloudSeed = -1
+
+export var spawnCloudAndCans = (player, w, h, distance, disMultiplier) => {
+  var canCount = player.jerryCans.length,
+    cloudCount = player.clouds.length,
+    noClouds = cloudCount == 0
+
+  if (noClouds || player.cloudSeed < player.distanceTraveled / 500) {
+    // Spawn jerry cans
+    const spawnCan = player.gasoline / 25 < random(-1, 4)
+
+    if (spawnCan) {
+      // Spawn random jerry can
+      var canImg = new Image()
+      canImg.src = '/src/resources/etc/jerrycan.png'
+      player.jerryCans[canCount] = new GameObject(false, canImg, 0, w, random(50 / disMultiplier, h / 2), 30, 30)
+      canCount += 1
+    }
+
+    // Spawn clouds
+    const spawnCloud = noClouds || player.cloudSeed == -1 ? 1 : Math.round(Math.random()) == 1
+    player.cloudSeed++
+
+    if (spawnCloud) {
+      // Generate random cloud
+      var cimg = new Image()
+      cimg.src = '/src/resources/etc/cloud_' + Math.round(Math.random()) + '.png'
+
+      const cloudY = random(random(-25, 0), distance > 0 ? 100 : 25)
+      const cWidth = random(0, 100) + 50
+      const cHeight = random(0, 25) + 25
+
+      player.clouds[cloudCount] = new GameObject(true, cimg, random(3, 12) / 100, w, cloudY, cWidth, cHeight)
+      cloudCount += 1
+    }
+  }
+}
 
 // Terrain generation
 var perm = []
@@ -15,23 +55,20 @@ export var noise = x => {
   return lerp(perm[Math.floor(x)], perm[Math.ceil(x)], x - Math.floor(x))
 }
 
-export var fillTerrain = (player, distance, multiplier, w, h, ctx) => {
+export var fillTerrain = (player, multiplier, w, h, ctx) => {
   ctx.beginPath()
   ctx.moveTo(0, h)
 
   // Generate terrain
   for (let drawX = 0; drawX < w; drawX++) {
-    const disX = distance + drawX
+    const disX = player.traveledDistance + drawX
     const doff = disX - player.x
 
-    var seed = doff < w ? 100 : -1
+    var seed = doff < w ? h * 0.25 : -1
 
     if (seed == -1) {
       seed = h - noise(disX) * (0.25 * (multiplier < 1 ? 1 : multiplier))
-
-      if (player.seedX == -1 || drawX == Math.round(player.x)) {
-        player.seedX = seed
-      }
+      if (player.seedX == -1 || drawX == Math.round(player.x)) player.seedX = seed
     }
 
     ctx.lineTo(drawX, seed)
@@ -42,66 +79,93 @@ export var fillTerrain = (player, distance, multiplier, w, h, ctx) => {
   ctx.fill()
 }
 
-// Motorcycle debris particles
-export var fillDebris = (player, ctx) => {
+export var fillFX = (player, ctx) => {
+  const popSize = player.popups.length,
+    debSize = player.debris.length
+
+  const amountToDraw = popSize + debSize
   ctx.fillStyle = 'black'
 
-  player.debris.filter(debris => {
-    if (!debris) return true
+  for (let toDraw = 0; toDraw < amountToDraw; toDraw++) {
+    const drawingPopup = popSize > 0 && toDraw < popSize
+    const objIndex = drawingPopup ? toDraw : toDraw - popSize
 
-    var remove =
-      player.x - debris.x >
-      // Remove debris if is farther than random x from bike, vary by speed
-      (player.grounded && player.xSpeed < 0.25 ? random(25, 200) : random(100, 400))
+    const drawable = (drawingPopup ? player.popups : player.debris)[objIndex]
 
-    if (remove) return true
-    else {
-      // Apply momentum
-      debris.x -= player.xSpeed * random(1, 5) + 0.5
-      debris.y -= 0.1
+    // Remove if out of view
 
-      // Draw
+    let remove = drawable == undefined
+    let isTrickInfo
+
+    if (!remove && !(isTrickInfo = drawingPopup && player.score < 3000 && drawable.text.includes('points')))
+      remove =
+        player.x - drawable.x >
+        (Particle.prototype.isPrototypeOf(drawable) || (player.grounded && player.xSpeed < 0.25)
+          ? random(25, 200)
+          : random(100, 400))
+    else if (isTrickInfo) remove = drawable.y < -15
+
+    if (remove) {
+      ;(drawingPopup ? player.popups : player.debris).splice(objIndex, 1)
+      continue
+    }
+
+    if (isTrickInfo) {
+      drawable.y -= player.xSpeed / 2 + 0.2
+    } else {
+      drawable.x -= player.xSpeed * random(1, 5) + 0.5
+      drawable.y -= 0.1
+    }
+
+    // Draw debris
+    if (!drawingPopup) {
       ctx.beginPath()
       ctx.arc(drawable.x, drawable.y, drawable.size, 0, Math.PI * 2, true)
       ctx.fill()
-      return false
-    }
-  })
-}
-
-// Tip Info / Trick Score
-export var fillPopups = (player, score, ctx) => {
-  player.popups.filter(popup => {
-    if (!popup) return true
-
-    var isTrickInfo = score < 3000 && popup.text.includes('points')
-    var remove
-
-    if (isTrickInfo) remove = popup.y < -15
-    else {
-      remove =
-        player.x - player.debris.x >
-        // Remove debris if is farther than random x from bike, vary by speed
-        (player.grounded && player.xSpeed < 0.25 ? random(25, 200) : random(100, 400))
-    }
-
-    if (remove) return true
-    else {
-      // Apply momenturm
-
-      // Trick info are meant to drift away
-      // While Tip info is meant to slowly rise
-      if (isTrickInfo) {
-        popup.y -= player.xSpeed / 2 + 0.2
-      } else {
-        popup.x -= player.xSpeed * random(1, 5) + 0.5
-        popup.y -= 0.1
-      }
+    } else {
+      if (isTrickInfo) ctx.fillStyle = 'gray'
 
       // Draw popups
-      ctx.fillStyle = isTrickInfo ? 'gray' : 'black'
-      ctx.fillText(popup.text, popup.x, popup.y)
-      return false
+      ctx.fillText(drawable.text, drawable.x, drawable.y)
+
+      if (isTrickInfo) ctx.fillStyle = 'black'
     }
-  })
+  }
+}
+
+export var fillObjects = (player, controlDiagrams, ctx) => {
+  var diagrams = controlDiagrams.length,
+    canCount = player.jerryCans.length,
+    cloudCount = player.clouds.length
+
+  var objsToDraw = diagrams + cloudCount + canCount
+
+  for (var toDraw = 0; toDraw < objsToDraw; toDraw++) {
+    const drawingDiagrams = diagrams > 0 && toDraw < diagrams
+    const drawingClouds = cloudCount > 0 && toDraw - diagrams < cloudCount
+
+    const objIndex = drawingDiagrams ? toDraw : drawingClouds ? toDraw - diagrams : toDraw - diagrams - cloudCount
+    const gameObject = (drawingDiagrams ? controlDiagrams : drawingClouds ? player.clouds : player.jerryCans)[objIndex]
+
+    // Remove object if out of view
+    if (gameObject == undefined || gameObject.x + gameObject.w <= 10) {
+      ;(drawingDiagrams ? controlDiagrams : drawingClouds ? player.clouds : player.jerryCans).splice(objIndex, 1)
+      continue
+    }
+
+    // Jerry can collision detection
+    if (!gameObject.cloud) {
+      if (player.x > gameObject.x - 30 && player.x < gameObject.x + 30) {
+        if (player.y > gameObject.y - 30 && player.y < gameObject.y + 30) {
+          player.jerryCans.splice(objIndex, 1)
+          player.gasoline = player.gasoline + 50 > 125 ? 125 : player.gasoline + 50
+          continue
+        }
+      }
+    }
+
+    // width == 60 is audio diagram, jerry cans width are 30
+    gameObject.x -= (player.xSpeed + gameObject.speed) * (gameObject.cloud ? 2.5 : gameObject.w == 60 ? 6 : 4)
+    ctx.drawImage(gameObject.img, gameObject.x, gameObject.y, gameObject.w, gameObject.h)
+  }
 }

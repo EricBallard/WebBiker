@@ -44,11 +44,11 @@ export var init = (player, usingMobile, w, h) => {
   // Show trick-tip info popup
   player.popups[0] = new Popup(
     (usingMobile ? 'Double-tap and Hold' : 'Hold Spacebar') + ' in the air for extra points!',
-    WeakMap / 4,
+    w / 4,
     115
   )
 
-  return controlDiagrams
+  return [controlDiagrams, [upPos, downPos, leftPos, rightPos]]
 }
 
 export var drawMobileControls = ctx => {

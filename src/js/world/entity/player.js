@@ -29,9 +29,16 @@ export class Player {
     // Score popups + debris
     ;(this.popups = new Array()), (this.debris = new Array())
 
+    // Stats
     this.score = 0
     this.gasoline = 125
     this.gameOver = false
+    this.traveledDistance = 1
+
+    // Game Objects
+    this.cloudSeed = 0
+    this.clouds = new Array()
+    this.jerryCans = new Array()
   }
 
   update(ctx, distance) {
@@ -39,11 +46,12 @@ export class Player {
     var rearWheel, frontWheel
 
     if (distance < this.canvasW) {
-      rearWheel = distance >= this.canvasW - 5 ? 100 - (distance - this.canvasW) : 100
+      rearWheel = this.canvasH * 0.25 //distance >= this.canvasW - 5 ? 100 - (distance - this.canvasW) : 100
       frontWheel = rearWheel
     } else {
       const disMultiplier = distance / 20000
-      rearWheel = this.canvasH - noise(distance + 5 + this.x) * (0.25 * (disMultiplier < 1 ? 1 : disMultiplier))
+
+      rearWheel = this.canvasH - noise(distance + 5 + this.x) * (0.25 * Math.max(1, disMultiplier))
       frontWheel = this.seedX
     }
 
@@ -106,7 +114,6 @@ export class Player {
 
     if (accelerating && this.debris.length < random(8, 16 * (this.xSpeed + 1))) {
       const debrisToSpawn = random(8, 16)
-      var debrisize = this.debris.length
 
       for (let spawn = 0; spawn < debrisToSpawn; spawn++) {
         var px = this.x - random(0, 50),
@@ -121,14 +128,13 @@ export class Player {
           py -= random(0, 10)
         }
 
-        this.debris[debrisize + spawn] = new Particle(Math.random() * 1, px, py)
-        debrisize += 1
+        this.debris.push(new Particle(Math.random() * 1, px, py))
       }
     }
 
     // Burn gasoline
     if (accelerating && Math.round(distance - this.canvasW) > 0)
-      this.gasoline = this.gasoline - 0.75 < 0 ? 0 : gasoline - 0.75
+      this.gasoline = this.gasoline - 0.75 < 0 ? 0 : this.gasoline - 0.75
 
     // If game is over, player runs out of gas, player is idling and touching start wall, or has crashed
     const outOfGas = this.gameOver || crashed ? false : this.gasoline < 1 && this.grounded && this.xSpeed < 0.015
@@ -209,7 +215,7 @@ export class Player {
     }
 
     if (!this.gameOver && flipped) {
-      score += 1000
+      this.score += 1000
       const px = this.x + (Math.round(Math.random()) == 1 ? random(-60, -45) : random(15, 30))
       this.popups[popSize == 0 ? 0 : popSize + 1] = new Popup('+1000', px, this.y - random(15, 30))
     }
@@ -256,7 +262,7 @@ export class Player {
 
       //TODO
     } else {
-      if (!this.doingTrick && !this.img.src.includes('biker.png')) this.img.src = '/resources/biker/biker.png'
+      if (!this.doingTrick && !this.img.src.includes('biker.png')) this.img.src = '/src/resources/biker/biker.png'
 
       ctx.translate(this.x, this.y)
     }

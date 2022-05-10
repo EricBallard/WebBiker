@@ -11,6 +11,10 @@ var controls = {
   audio_btn: undefined,
   audio: undefined,
   sfx: undefined,
+  up_pos: undefined,
+  down_pos: undefined,
+  left_pos: undefined,
+  right_pos: undefined,
 }
 
 // Determine if browser is mobile by useragent
@@ -99,13 +103,7 @@ function getMousePos(e) {
 }
 
 // Validate if mouse x/y is within bounds of UI element x/y
-function isHovering(mx, my) {
-  var x = controls.audio_btn.x,
-    y = controls.audio_btn.y
-
-  var w = controls.audio_btn.w,
-    h = controls.audio_btn.h
-
+function isHovering(mx, my, x, y, w, h) {
   if (mx < x + w && mx > x - w / 3) if (my < y + h && my > y - h / 3) return true
   return false
 }
@@ -119,20 +117,26 @@ function move(evt) {
     y = mousePos.y
 
   // Hover control diagrams (audio toggle)
-  if (!hoveringControl && isHovering(x, y)) hoveringControl = 'AUDIO'
+  var xx = controls.audio_btn.x,
+    yy = controls.audio_btn.y
+
+  var w = controls.audio_btn.w,
+    h = controls.audio_btn.h
+
+  if (!hoveringControl && isHovering(x, y, xx, yy, w, h)) hoveringControl = 'AUDIO'
 
   // Hover static control displays (mobile controls)
   if (usingMobile) {
     if (!hoveringControl) {
       evt.preventDefault()
 
-      if (isHovering(x, y, upPos.x, upPos.y, 60, 60)) {
+      if (isHovering(x, y, controls.up_pos.x, controls.up_pos.y, 60, 60)) {
         hoveringControl = 'UP'
-      } else if (isHovering(x, y, downPos.x, downPos.y, 60, 60)) {
+      } else if (isHovering(x, y, controls.down_pos.x, controls.down_pos.y, 60, 60)) {
         hoveringControl = 'DOWN'
-      } else if (isHovering(x, y, leftPos.x, leftPos.y, 60, 60)) {
+      } else if (isHovering(x, y, controls.left_pos.x, controls.left_pos.y, 60, 60)) {
         hoveringControl = 'LEFT'
-      } else if (isHovering(x, y, rightPos.x, rightPos.y, 60, 60)) {
+      } else if (isHovering(x, y, controls.right_pos.x, controls.right_pos.y, 60, 60)) {
         hoveringControl = 'RIGHT'
       }
     }

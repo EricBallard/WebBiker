@@ -1,10 +1,19 @@
+function isBot() {
+  return navigator.webdriver || /bot|googlebot|crawler|spider|robot|curl|crawling/i.test(navigator.userAgent)
+}
+
+function updateSubmitBtn() {
+  const initials = document.getElementById('name_input').value
+  document.getElementById('submit_input').disabled = initials.search(/[^a-zA-Z]+/) != -1 || initials.length < 2
+}
+
 function getCookie() {
   const value = `; ${document.cookie}`
   const parts = value.split(`; ${'AUTH'}=`)
   if (parts.length === 2) return parts.pop().split(';').shift()
 }
 
-function fetchHiscores() {
+function fetch() {
   var xmlhttp = new XMLHttpRequest()
 
   xmlhttp.onreadystatechange = function () {
@@ -30,19 +39,10 @@ function fetchHiscores() {
   xmlhttp.send()
 }
 
-function updateSubmitBtn() {
-  const initials = document.getElementById('name_input').value
-  document.getElementById('submit_input').disabled = initials.search(/[^a-zA-Z]+/) != -1 || initials.length < 2
-}
-
-function isBot() {
-  return navigator.webdriver || /bot|googlebot|crawler|spider|robot|curl|crawling/i.test(navigator.userAgent)
-}
-
-function submitScore() {
+function submit() {
   // Anti-tamper detection
   if (isBot() || window.innerWidth < 400 || window.innerHeight < 400) {
-    fetchHiscores()
+    fetch()
     return
   }
 
@@ -52,7 +52,7 @@ function submitScore() {
 
   // Ignore scores < 1000, verify initials
   if (!initials || !jwt || score < 1000 || initials.length > 3) {
-    fetchHiscores()
+    fetch()
     return
   }
 
@@ -60,7 +60,7 @@ function submitScore() {
 
   xmlhttp.onreadystatechange = function () {
     if (this.readyState == 4 && this.status == 200) {
-      fetchHiscores()
+      fetch()
     }
 
     console.log(this.response)
