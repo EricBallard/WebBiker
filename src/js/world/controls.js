@@ -185,7 +185,7 @@ function click(evt, down) {
         if ((muteAudio = !muteAudio)) controls.audio.pause()
         else controls.audio.play()
 
-        controls.audio_btn.img.src = '/src/resources/controls/audio_' + (muteAudio ? 'off' : 'on') + '.png'
+        controls.audio_btn.img.src = './resources/controls/audio_' + (muteAudio ? 'off' : 'on') + '.png'
         break
       case 'UP':
         accelerate(down ? 1 : 0)
@@ -203,7 +203,7 @@ function click(evt, down) {
   }
 }
 
-export var init = () => {
+export var initControls = () => {
   // Register control listeners
   if (usingMobile) {
     // Mobile

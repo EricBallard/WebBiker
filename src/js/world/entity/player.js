@@ -10,8 +10,8 @@ export class Player {
 
     // Player image
     ;(this.imgBiker = null), (this.backdrop = new Image()), (this.img = new Image())
-    this.backdrop.src = '/src/resources/etc/highlight_drop.png'
-    this.img.src = '/src/resources/biker/biker.png'
+    this.backdrop.src = './resources/etc/highlight_drop.png'
+    this.img.src = './resources/biker/biker.png'
     ;(this.canvasW = w), (this.canvasH = h)
     ;(this.w = 30), (this.h = 30)
 
@@ -41,17 +41,17 @@ export class Player {
     this.jerryCans = new Array()
   }
 
-  update(ctx, distance) {
+  update(ctx) {
     // Calculate player position
     var rearWheel, frontWheel
 
-    if (distance < this.canvasW) {
+    if (this.traveledDistance < this.canvasW) {
       rearWheel = this.canvasH * 0.25 //distance >= this.canvasW - 5 ? 100 - (distance - this.canvasW) : 100
       frontWheel = rearWheel
     } else {
-      const disMultiplier = distance / 20000
+      const disMultiplier = this.traveledDistance / 20000
 
-      rearWheel = this.canvasH - noise(distance + 5 + this.x) * (0.25 * Math.max(1, disMultiplier))
+      rearWheel = this.canvasH - noise(this.traveledDistance + 5 + this.x) * (0.25 * Math.max(1, disMultiplier))
       frontWheel = this.seedX
     }
 
@@ -85,7 +85,7 @@ export class Player {
           crashed = true
         } else if (this.controls.trick == 0) {
           ;(this.w = 30), (this.h = 30)
-          this.img.src = '/src/resources/biker/biker.png'
+          this.img.src = './resources/biker/biker.png'
           this.doingTrick = false
         } else {
           // Hold trick for points
@@ -102,7 +102,7 @@ export class Player {
       } else if (!this.grounded) {
         if (this.controls.trick == 1) {
           ;(this.w = 33), (this.h = 33)
-          this.img.src = '/src/resources/biker/biker_trick.png'
+          this.img.src = './resources/biker/biker_trick.png'
           this.doingTrick = true
           this.trickCounter = 0
         }
@@ -133,7 +133,7 @@ export class Player {
     }
 
     // Burn gasoline
-    if (accelerating && Math.round(distance - this.canvasW) > 0)
+    if (accelerating && Math.round(this.traveledDistance - this.canvasW) > 0)
       this.gasoline = this.gasoline - 0.75 < 0 ? 0 : this.gasoline - 0.75
 
     // If game is over, player runs out of gas, player is idling and touching start wall, or has crashed
@@ -144,8 +144,11 @@ export class Player {
       this.gameOver ||
       crashed ||
       outOfGas ||
-      distance < -250 ||
-      (distance > this.canvasW && distance < this.canvasW + 10 && this.grounded && this.xSpeed < 0.009)
+      this.traveledDistance < -250 ||
+      (this.traveledDistance > this.canvasW &&
+        this.traveledDistance < this.canvasW + 10 &&
+        this.grounded &&
+        this.xSpeed < 0.009)
     ) {
       // Reset this.controls
 
@@ -159,11 +162,11 @@ export class Player {
 
         if (!outOfGas) {
           // Split rider/bike sprite into 2 for crash animation
-          this.img.src = '/src/resources/biker/bike_alacarte.png'
+          this.img.src = './resources/biker/bike_alacarte.png'
 
           // Pick random fall image
           this.imgBiker = new Image()
-          this.imgBiker.src = '/src/resources/biker/biker_fall_' + Math.round(Math.random()) + '.png'
+          this.imgBiker.src = './resources/biker/biker_fall_' + Math.round(Math.random()) + '.png'
 
           // Determine which side to draw player on relavent to rotation
           this.crashOffset = this.rotation > 0.5 ? 10 : -10
@@ -194,7 +197,7 @@ export class Player {
     }
 
     this.rotationSpeed +=
-      distance < this.canvasW + 5 && distance > this.canvasW - 5
+      this.traveledDistance < this.canvasW + 5 && this.traveledDistance > this.canvasW - 5
         ? -0.05
         : (this.controls.left - this.controls.right) * 0.05
 
@@ -242,11 +245,11 @@ export class Player {
     if (flyingHigh) {
       if (this.doingTrick) {
         if (!this.img.src.includes('biker_trick_highlight.png')) {
-          this.img.src = '/src/resources/biker/biker_trick_highlight.png'
+          this.img.src = './resources/biker/biker_trick_highlight.png'
         }
       } else {
         if (!this.img.src.includes('biker_highlight.png')) {
-          this.img.src = '/src/resources/biker/biker_highlight.png'
+          this.img.src = './resources/biker/biker_highlight.png'
         }
       }
 
@@ -262,7 +265,7 @@ export class Player {
 
       //TODO
     } else {
-      if (!this.doingTrick && !this.img.src.includes('biker.png')) this.img.src = '/src/resources/biker/biker.png'
+      if (!this.doingTrick && !this.img.src.includes('biker.png')) this.img.src = './resources/biker/biker.png'
 
       ctx.translate(this.x, this.y)
     }

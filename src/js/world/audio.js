@@ -1,10 +1,10 @@
 // Game Audio
-export var init = () => {
-  const audio = new Audio('/src/resources/audio/background_music_compressed.mp3')
+export var initAudio = () => {
+  const audio = new Audio('./resources/audio/background_music_compressed.mp3')
   audio.volume = 0.35
   audio.loop = true
 
-  const sfx = new Audio('/src/resources/audio/motobike_accelerate.mp3')
+  const sfx = new Audio('./resources/audio/motobike_accelerate.mp3')
   sfx.loop = true
   return [audio, sfx]
 }

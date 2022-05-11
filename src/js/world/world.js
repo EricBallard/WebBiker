@@ -2,33 +2,31 @@ import { GameObject, Particle } from './entity/entities.js'
 import { random } from '../index.js'
 
 // Spawn objects
-var cloudSeed = -1
-
 export var spawnCloudAndCans = (player, w, h, distance, disMultiplier) => {
   var canCount = player.jerryCans.length,
-    cloudCount = player.clouds.length,
-    noClouds = cloudCount == 0
+    cloudCount = player.clouds.length
 
-  if (noClouds || player.cloudSeed < player.distanceTraveled / 500) {
+  if (distance > 1 && player.cloudSeed < distance / w) {
+    player.cloudSeed++
+
     // Spawn jerry cans
-    const spawnCan = player.gasoline / 25 < random(-1, 4)
+    const spawnCan = player.gasoline / 25 < random(-2, 6)
 
     if (spawnCan) {
       // Spawn random jerry can
       var canImg = new Image()
-      canImg.src = '/src/resources/etc/jerrycan.png'
+      canImg.src = './resources/etc/jerrycan.png'
       player.jerryCans[canCount] = new GameObject(false, canImg, 0, w, random(50 / disMultiplier, h / 2), 30, 30)
       canCount += 1
     }
 
     // Spawn clouds
-    const spawnCloud = noClouds || player.cloudSeed == -1 ? 1 : Math.round(Math.random()) == 1
-    player.cloudSeed++
+    const spawnCloud = cloudCount == 0 || player.cloudSeed == -1 ? 1 : Math.round(Math.random()) == 1
 
     if (spawnCloud) {
       // Generate random cloud
       var cimg = new Image()
-      cimg.src = '/src/resources/etc/cloud_' + Math.round(Math.random()) + '.png'
+      cimg.src = './resources/etc/cloud_' + Math.round(Math.random()) + '.png'
 
       const cloudY = random(random(-25, 0), distance > 0 ? 100 : 25)
       const cWidth = random(0, 100) + 50
