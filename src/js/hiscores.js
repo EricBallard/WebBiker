@@ -44,6 +44,7 @@ export var submit = player => {
 
   // Anti-tamper detection
   if (isBot() || window.innerWidth < 400 || window.innerHeight < 400) {
+    
     fetch()
     return
   }

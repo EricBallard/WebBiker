@@ -1,22 +1,25 @@
 import { GameObject, Particle } from './entity/entities.js'
-import { random } from '../index.js'
+import { random, getImg } from '../index.js'
 
 // Spawn objects
-export var spawnCloudAndCans = (player, w, h, distance, disMultiplier) => {
+var canImg = undefined,
+  cloudImgs = new Map()
+
+export var spawnCloudAndCans = (player, w, h, distance) => {
   var canCount = player.jerryCans.length,
     cloudCount = player.clouds.length
 
-  if (distance > 1 && player.cloudSeed < distance / w) {
+  if (cloudCount == 0 || player.cloudSeed < distance / w) {
     player.cloudSeed++
 
     // Spawn jerry cans
-    const spawnCan = player.gasoline / 25 < random(-2, 6)
+    const spawnCan = player.score > 1 && player.gasoline / 25 < random(-2, 5)
 
     if (spawnCan) {
       // Spawn random jerry can
-      var canImg = new Image()
-      canImg.src = './resources/etc/jerrycan.png'
-      player.jerryCans[canCount] = new GameObject(false, canImg, 0, w, random(50 / disMultiplier, h / 2), 30, 30)
+      if (!canImg) canImg = getImg('./resources/etc/jerrycan.png')
+
+      player.jerryCans[canCount] = new GameObject(false, canImg, 0, w, random(0, h / 3), 30, 30)
       canCount += 1
     }
 
@@ -25,12 +28,21 @@ export var spawnCloudAndCans = (player, w, h, distance, disMultiplier) => {
 
     if (spawnCloud) {
       // Generate random cloud
-      var cimg = new Image()
-      cimg.src = './resources/etc/cloud_' + Math.round(Math.random()) + '.png'
+      var type = Math.round(Math.random())
 
-      const cloudY = random(random(-25, 0), distance > 0 ? 100 : 25)
-      const cWidth = random(0, 100) + 50
-      const cHeight = random(0, 25) + 25
+      // Check if img is cached
+      var cimg = cloudImgs.get(type)
+
+      if (!cimg) {
+        // Not cached, load & cache
+        cimg = getImg('./resources/etc/cloud_' + type + '.png')
+        cloudImgs.set(type, cimg)
+      }
+
+      var cWidth = random(0, 100) + 50,
+        cHeight = random(0, 25) + 25
+
+      var cloudY = random(random(-25, 0), distance > 0 ? 100 : 25)
 
       player.clouds[cloudCount] = new GameObject(true, cimg, random(3, 12) / 100, w, cloudY, cWidth, cHeight)
       cloudCount += 1

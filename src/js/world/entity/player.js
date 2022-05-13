@@ -28,6 +28,7 @@ export class Player {
 
     // Score popups + debris
     ;(this.popups = new Array()), (this.debris = new Array())
+    this.crashFX = false
 
     // Stats
     this.score = 0
@@ -181,6 +182,19 @@ export class Player {
 
       // Declare game is over - player has crashed or gone out of bounds
       this.gameOver = true
+
+      // Spawn particle fx
+      if (!this.crashFX) {
+        this.crashFX = true
+        const debrisToSpawn = random(50, 100 * this.xSpeed + 50)
+
+        for (let spawn = 0; spawn < debrisToSpawn; spawn++) {
+          var px = this.x - random(-50, 50),
+            py = this.y + random(-5, 25)
+
+          this.debris.push(new Particle(Math.random() * 1, px, py))
+        }
+      }
 
       // Rotate and position according to speed
       this.rotationSpeed = this.rotation > 0.5 ? this.xSpeed - this.xSpeed * 2 : this.xSpeed

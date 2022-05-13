@@ -1,28 +1,27 @@
 import { GameObject, Popup, Position } from './entity/entities.js'
 
 /* Show UI elements responsible for displaying controls eg; audio toggle, mobile, keypad */
-var getImg = src => {
-  var img = new Image()
-  img.src = src
-  return img
-}
+import { getImg } from '../index.js'
 
 // Mobiles control diagrams
-var upImg, downImg, leftImg, rightImg
+var upImg, downImg, leftImg, rightImg, audioImg, keysImg
 
 // Local screen position to draw diagrams
 var upPos, downPos, leftPos, rightPos
 
 var initMobile = (w, h) => {
-  upPos = new Position(w / 4, h - h / 4)
-  downPos = new Position(upPos.x - 100, upPos.y)
-  leftPos = new Position(w - w / 4 - 50, upPos.y)
-  rightPos = new Position(leftPos.x + 100, upPos.y)
+  // Cache screen coords to draw mobile controls
+  leftPos = new Position(11, h - h / 4)
+  rightPos = new Position(136, leftPos.y)
 
-  upImg = getImg('./resources/controls/mobile_up.png')
-  downImg = getImg('./resources/controls/mobile_down.png')
-  leftImg = getImg('./resources/controls/mobile_left.png')
-  rightImg = getImg('./resources/controls/mobile_right.png')
+  downPos = new Position(w - 200, leftPos.y)
+  upPos = new Position(w - 75, leftPos.y)
+
+  // Cache images for control buttons
+  if (!upImg) upImg = getImg('./resources/controls/mobile_up.png')
+  if (!downImg) downImg = getImg('./resources/controls/mobile_down.png')
+  if (!leftImg) leftImg = getImg('./resources/controls/mobile_left.png')
+  if (!rightImg) rightImg = getImg('./resources/controls/mobile_right.png')
 }
 
 export var init = (player, usingMobile, w, h) => {
@@ -30,14 +29,14 @@ export var init = (player, usingMobile, w, h) => {
   var controlDiagrams = new Array()
 
   // Toggle Audio button
-  const audioImg = getImg('./resources/controls/audio_on.png')
-  controlDiagrams[0] = new GameObject(false, audioImg, 0, w - w / 4 - 50 + 100, h / 2, 60, 60)
+  if (!audioImg) audioImg = getImg('./resources/controls/audio_on.png')
+  controlDiagrams[0] = new GameObject(false, audioImg, 0, w - 200, h / 2, 60, 60)
 
   // Spawn MOBILE control buttons
   if (usingMobile) initMobile(w, h)
   else {
     // Spawn PC control info
-    var keysImg = getImg('./resources/controls/pc_controls.png')
+    if (!keysImg) keysImg = getImg('./resources/controls/pc_controls.png')
     controlDiagrams[1] = new GameObject(false, keysImg, 0, w / 4 - 100, h - h / 2, 200, 200)
   }
 
