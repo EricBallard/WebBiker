@@ -1,20 +1,12 @@
-function isBot() {
-  return navigator.webdriver || /bot|googlebot|crawler|spider|robot|curl|crawling/i.test(navigator.userAgent)
-}
+import { getCookie, isBot } from './util.js'
 
-function getCookie() {
-  const value = `; ${document.cookie}`
-  const parts = value.split(`; ${'AUTH'}=`)
-  if (parts.length === 2) return parts.pop().split(';').shift()
-}
-
-export var updateSubmitBtn = () => {
+export let updateSubmitBtn = () => {
   const initials = document.getElementById('name_input').value
   document.getElementById('submit_input').disabled = initials.search(/[^a-zA-Z]+/) != -1 || initials.length < 2
 }
 
-export var fetch = () => {
-  var xmlhttp = new XMLHttpRequest()
+export let fetch = () => {
+  let xmlhttp = new XMLHttpRequest()
 
   xmlhttp.onreadystatechange = function () {
     if (this.readyState == 4 && this.status == 200) {
@@ -39,12 +31,11 @@ export var fetch = () => {
   xmlhttp.send()
 }
 
-export var submit = player => {
+export let submit = player => {
   if (!player) return
 
   // Anti-tamper detection
-  if (isBot() || window.innerWidth < 400 || window.innerHeight < 400) {
-    
+  if (isBot()) {
     fetch()
     return
   }
@@ -54,19 +45,17 @@ export var submit = player => {
     jwt = getCookie()
 
   // Ignore scores < 1000, verify initials
-  if (!initials || !jwt || score < 1000 || initials.length > 3) {
+  if (!initials || initials.length > 3 || score < 1000 || !jwt) {
     fetch()
     return
   }
 
-  var xmlhttp = new XMLHttpRequest()
+  let xmlhttp = new XMLHttpRequest()
 
   xmlhttp.onreadystatechange = function () {
     if (this.readyState == 4 && this.status == 200) {
       fetch()
     }
-
-    console.log(this.response)
   }
 
   xmlhttp.open('GET', './php/submit_score.php?initials=' + initials + '&score=' + score + '&auth=' + jwt, true)

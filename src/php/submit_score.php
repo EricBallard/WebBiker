@@ -16,7 +16,6 @@ $svr_jwt = $_SESSION["AUTH"];
 
 // Token has not been altered
 if (strcmp($usr_jwt, $svr_jwt) !== 0) {
-    echo "no match";
     session_destroy();
     $dbc->close();
     die();

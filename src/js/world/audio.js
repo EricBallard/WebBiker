@@ -1,22 +1,22 @@
 // Game Audio
-export var initAudio = () => {
-  const audio = new Audio('./resources/audio/background_music_compressed.mp3')
+export let initAudio = () => {
+  const audio = new Audio('https://storage.googleapis.com/webbiker_bucket/audio/background_music_compressed.mp3')
   audio.volume = 0.35
   audio.loop = true
 
-  const sfx = new Audio('./resources/audio/motobike_accelerate.mp3')
+  const sfx = new Audio('https://storage.googleapis.com/webbiker_bucket/audio/motobike_accelerate.mp3')
   sfx.loop = true
   return [audio, sfx]
 }
 
-export var fadeOut = audio => {
-  var actualVolume = audio.volume
-  var fadeOutInterval = setInterval(function () {
+export let fadeOut = audio => {
+  let actualVolume = audio.volume
+  let fadeOutInterval = setInterval(function () {
     actualVolume = (parseFloat(actualVolume) - 0.1).toFixed(1)
     if (actualVolume >= 0) {
-        audio.volFume = actualVolume
+      audio.volume = actualVolume
     } else {
-        audio.pause()
+      audio.pause()
       clearInterval(fadeOutInterval)
     }
   }, 100)

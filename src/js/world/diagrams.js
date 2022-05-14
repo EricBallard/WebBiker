@@ -1,15 +1,15 @@
 import { GameObject, Popup, Position } from './entity/entities.js'
 
 /* Show UI elements responsible for displaying controls eg; audio toggle, mobile, keypad */
-import { getImg } from '../index.js'
+import { getImg } from '../util/util.js'
 
 // Mobiles control diagrams
-var upImg, downImg, leftImg, rightImg, audioImg, keysImg
+let upImg, downImg, leftImg, rightImg, audioImg, keysImg
 
 // Local screen position to draw diagrams
-var upPos, downPos, leftPos, rightPos
+let upPos, downPos, leftPos, rightPos
 
-var initMobile = (w, h) => {
+let initMobile = (w, h) => {
   // Cache screen coords to draw mobile controls
   leftPos = new Position(11, h - h / 4)
   rightPos = new Position(136, leftPos.y)
@@ -18,25 +18,25 @@ var initMobile = (w, h) => {
   upPos = new Position(w - 75, leftPos.y)
 
   // Cache images for control buttons
-  if (!upImg) upImg = getImg('./resources/controls/mobile_up.png')
-  if (!downImg) downImg = getImg('./resources/controls/mobile_down.png')
-  if (!leftImg) leftImg = getImg('./resources/controls/mobile_left.png')
-  if (!rightImg) rightImg = getImg('./resources/controls/mobile_right.png')
+  if (!upImg) upImg = getImg('https://storage.googleapis.com/webbiker_bucket/controls/mobile_up.png')
+  if (!downImg) downImg = getImg('https://storage.googleapis.com/webbiker_bucket/controls/mobile_down.png')
+  if (!leftImg) leftImg = getImg('https://storage.googleapis.com/webbiker_bucket/controls/mobile_left.png')
+  if (!rightImg) rightImg = getImg('https://storage.googleapis.com/webbiker_bucket/controls/mobile_right.png')
 }
 
-export var init = (player, usingMobile, w, h) => {
+export let init = (player, usingMobile, w, h) => {
   // Control info diagrams
-  var controlDiagrams = new Array()
+  let controlDiagrams = new Array()
 
   // Toggle Audio button
-  if (!audioImg) audioImg = getImg('./resources/controls/audio_on.png')
+  if (!audioImg) audioImg = getImg('https://storage.googleapis.com/webbiker_bucket/controls/audio_on.png')
   controlDiagrams[0] = new GameObject(false, audioImg, 0, w - 200, h / 2, 60, 60)
 
   // Spawn MOBILE control buttons
   if (usingMobile) initMobile(w, h)
   else {
     // Spawn PC control info
-    if (!keysImg) keysImg = getImg('./resources/controls/pc_controls.png')
+    if (!keysImg) keysImg = getImg('https://storage.googleapis.com/webbiker_bucket/controls/pc_controls.png')
     controlDiagrams[1] = new GameObject(false, keysImg, 0, w / 4 - 100, h - h / 2, 200, 200)
   }
 
@@ -50,7 +50,7 @@ export var init = (player, usingMobile, w, h) => {
   return [controlDiagrams, [upPos, downPos, leftPos, rightPos]]
 }
 
-export var drawMobileControls = ctx => {
+export let drawMobileControls = ctx => {
   ctx.drawImage(upImg, upPos.x, upPos.y, 60, 60)
   ctx.drawImage(downImg, downPos.x, downPos.y, 60, 60)
 

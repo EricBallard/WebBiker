@@ -1,5 +1,5 @@
 import { Particle, Popup } from './entities.js'
-import { random } from '../../index.js'
+import { random } from '../../util/util.js'
 import { noise } from '../world.js'
 
 // Player
@@ -10,8 +10,8 @@ export class Player {
 
     // Player image
     ;(this.imgBiker = null), (this.backdrop = new Image()), (this.img = new Image())
-    this.backdrop.src = './resources/etc/highlight_drop.png'
-    this.img.src = './resources/biker/biker.png'
+    this.backdrop.src = 'https://storage.googleapis.com/webbiker_bucket/etc/highlight_drop.png'
+    this.img.src = 'https://storage.googleapis.com/webbiker_bucket/biker/biker.png'
     ;(this.canvasW = w), (this.canvasH = h)
     ;(this.w = 30), (this.h = 30)
 
@@ -44,10 +44,10 @@ export class Player {
 
   update(ctx) {
     // Calculate player position
-    var rearWheel, frontWheel
+    let rearWheel, frontWheel
 
     if (this.traveledDistance < this.canvasW) {
-      rearWheel = this.canvasH * 0.25 //distance >= this.canvasW - 5 ? 100 - (distance - this.canvasW) : 100
+      rearWheel = this.canvasH * 0.4
       frontWheel = rearWheel
     } else {
       const disMultiplier = this.traveledDistance / 20000
@@ -76,17 +76,16 @@ export class Player {
     }
 
     // Perform stunt trick or init crash
-    var crashed = this.grounded && Math.abs(this.rotation) > Math.PI * 0.5
+    let crashed = this.grounded && Math.abs(this.rotation) > Math.PI * 0.5,
+      popSize = this.popups.length
 
     if (!crashed) {
-      var popSize = this.popups.length
-
       if (this.doingTrick) {
         if (this.grounded) {
           crashed = true
         } else if (this.controls.trick == 0) {
           ;(this.w = 30), (this.h = 30)
-          this.img.src = './resources/biker/biker.png'
+          this.img.src = 'https://storage.googleapis.com/webbiker_bucket/biker/biker.png'
           this.doingTrick = false
         } else {
           // Hold trick for points
@@ -103,7 +102,7 @@ export class Player {
       } else if (!this.grounded) {
         if (this.controls.trick == 1) {
           ;(this.w = 33), (this.h = 33)
-          this.img.src = './resources/biker/biker_trick.png'
+          this.img.src = 'https://storage.googleapis.com/webbiker_bucket/biker/biker_trick.png'
           this.doingTrick = true
           this.trickCounter = 0
         }
@@ -117,7 +116,7 @@ export class Player {
       const debrisToSpawn = random(8, 16)
 
       for (let spawn = 0; spawn < debrisToSpawn; spawn++) {
-        var px = this.x - random(0, 50),
+        let px = this.x - random(0, 50),
           py = this.y + random(0, 10)
         const rotOff = (this.rotation + 1) * 100
 
@@ -158,16 +157,17 @@ export class Player {
 
       if (!this.gameOver) {
         // Game has just ended - show leaderboard and spawn wreckage
-        var leaderboard = document.getElementById('leaderboard')
+        let leaderboard = document.getElementById('leaderboard')
         leaderboard.style.display = 'block'
 
         if (!outOfGas) {
           // Split rider/bike sprite into 2 for crash animation
-          this.img.src = './resources/biker/bike_alacarte.png'
+          this.img.src = 'https://storage.googleapis.com/webbiker_bucket/biker/bike_alacarte.png'
 
           // Pick random fall image
           this.imgBiker = new Image()
-          this.imgBiker.src = './resources/biker/biker_fall_' + Math.round(Math.random()) + '.png'
+          this.imgBiker.src =
+            'https://storage.googleapis.com/webbiker_bucket/biker/biker_fall_' + Math.round(Math.random()) + '.png'
 
           // Determine which side to draw player on relavent to rotation
           this.crashOffset = this.rotation > 0.5 ? 10 : -10
@@ -189,7 +189,7 @@ export class Player {
         const debrisToSpawn = random(50, 100 * this.xSpeed + 50)
 
         for (let spawn = 0; spawn < debrisToSpawn; spawn++) {
-          var px = this.x - random(-50, 50),
+          let px = this.x - random(-50, 50),
             py = this.y + random(-5, 25)
 
           this.debris.push(new Particle(Math.random() * 1, px, py))
@@ -202,7 +202,7 @@ export class Player {
     }
 
     // Calculate player rotation and speed
-    var angle = Math.atan2(rearWheel - 15 - this.y, this.x + 5 - this.x)
+    let angle = Math.atan2(rearWheel - 15 - this.y, this.x + 5 - this.x)
     this.y += this.ySpeed
 
     if (this.grounded && !this.gameOver) {
@@ -217,7 +217,7 @@ export class Player {
 
     this.rotation -= this.rotationSpeed * 0.1
 
-    var flipped = false
+    let flipped = false
     // Normalize rotation
     if (this.rotation > Math.PI) {
       // Front flip
@@ -259,11 +259,11 @@ export class Player {
     if (flyingHigh) {
       if (this.doingTrick) {
         if (!this.img.src.includes('biker_trick_highlight.png')) {
-          this.img.src = './resources/biker/biker_trick_highlight.png'
+          this.img.src = 'https://storage.googleapis.com/webbiker_bucket/biker/biker_trick_highlight.png'
         }
       } else {
         if (!this.img.src.includes('biker_highlight.png')) {
-          this.img.src = './resources/biker/biker_highlight.png'
+          this.img.src = 'https://storage.googleapis.com/webbiker_bucket/biker/biker_highlight.png'
         }
       }
 
@@ -273,13 +273,14 @@ export class Player {
 
       ctx.fillStyle = 'gray'
       ctx.font = '1.15rem Verdana Bold'
-      ctx.fillText(Math.round(this.canvasH - this.y) + 'M', 15, 75)
+      ctx.fillText(Math.round((this.canvasH - this.y) / 3) + 'ft', 15, 75)
 
       ctx.translate(30, 30)
 
       //TODO
     } else {
-      if (!this.doingTrick && !this.img.src.includes('biker.png')) this.img.src = './resources/biker/biker.png'
+      if (!this.doingTrick && !this.img.src.includes('biker.png'))
+        this.img.src = 'https://storage.googleapis.com/webbiker_bucket/biker/biker.png'
 
       ctx.translate(this.x, this.y)
     }

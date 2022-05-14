@@ -1,13 +1,14 @@
 import { fadeOut } from './audio.js'
 
 // Player control - tracks status of button press
-var controls = {
+let controls = {
   up: 0,
   down: 0,
   left: 0,
   right: 0,
   trick: 0,
   player: undefined,
+  muteAudio: false,
   audio_btn: undefined,
   audio: undefined,
   sfx: undefined,
@@ -18,7 +19,7 @@ var controls = {
 }
 
 // Determine if browser is mobile by useragent
-var isMobile = {
+let isMobile = {
   Android: function () {
     return navigator.userAgent.match(/Android/i)
   },
@@ -42,22 +43,21 @@ var isMobile = {
 const usingMobile = isMobile.any()
 
 // Track double-taps on mobile
-var lastTouch = undefined
-var doubleTapping = false
+let lastTouch = undefined
+let doubleTapping = false
 
 // PC hover status/audio status
-var hoveringControl = false,
-  muteAudio = false
+let hoveringControl = false
 
 // Accelerate and play sfx
 function accelerate(status) {
   if (controls.player.gasoline < 1) status = 0
   else {
     // Play music when user interacts with page
-    if (!muteAudio && controls.audio.currentTime == 0) controls.audio.play()
+    if (!controls.muteAudio && controls.audio.currentTime == 0) controls.audio.play()
 
     // Accelerate sfx
-    if (!muteAudio && status == 1) {
+    if (!controls.muteAudio && status == 1) {
       controls.sfx.currentTime = 0
       controls.sfx.volume = 0.4
       controls.sfx.play()
@@ -95,7 +95,7 @@ function updateKey(key, status) {
 
 // Returns position of mouse/touches
 function getMousePos(e) {
-  var rect = canvas.getBoundingClientRect()
+  let rect = canvas.getBoundingClientRect()
   return {
     x: (e.changedTouches ? e.changedTouches[0].clientX : e.clientX) - rect.left,
     y: (e.changedTouches ? e.changedTouches[0].clientY : e.clientY) - rect.top,
@@ -112,15 +112,15 @@ function isHovering(mx, my, x, y, w, h) {
 function move(evt) {
   hoveringControl = false
 
-  var mousePos = getMousePos(evt)
-  var x = mousePos.x,
+  let mousePos = getMousePos(evt)
+  let x = mousePos.x,
     y = mousePos.y
 
   // Hover control diagrams (audio toggle)
-  var xx = controls.audio_btn.x,
+  let xx = controls.audio_btn.x,
     yy = controls.audio_btn.y
 
-  var w = controls.audio_btn.w,
+  let w = controls.audio_btn.w,
     h = controls.audio_btn.h
 
   if (!hoveringControl && isHovering(x, y, xx, yy, w, h)) hoveringControl = 'AUDIO'
@@ -182,10 +182,12 @@ function click(evt, down) {
       case 'AUDIO':
         if (down) return
 
-        if ((muteAudio = !muteAudio)) controls.audio.pause()
-        else controls.audio.play()
+        if ((controls.muteAudio = !controls.muteAudio)) {
+          controls.audio.pause()
+          controls.sfx.pause()
+        } else controls.audio.play()
 
-        controls.audio_btn.img.src = './resources/controls/audio_' + (muteAudio ? 'off' : 'on') + '.png'
+        controls.audio_btn.img.src = 'https://storage.googleapis.com/webbiker_bucket/controls/audio_' + (controls.muteAudio ? 'off' : 'on') + '.png'
         break
       case 'UP':
         accelerate(down ? 1 : 0)
@@ -203,7 +205,7 @@ function click(evt, down) {
   }
 }
 
-export var initControls = () => {
+export let initControls = () => {
   // Register control listeners
   if (usingMobile) {
     // Mobile

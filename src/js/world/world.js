@@ -1,12 +1,12 @@
 import { GameObject, Particle } from './entity/entities.js'
-import { random, getImg } from '../index.js'
+import { random, getImg } from '../util/util.js'
 
 // Spawn objects
-var canImg = undefined,
+let canImg = undefined,
   cloudImgs = new Map()
 
-export var spawnCloudAndCans = (player, w, h, distance) => {
-  var canCount = player.jerryCans.length,
+export let spawnCloudAndCans = (player, w, h, distance) => {
+  let canCount = player.jerryCans.length,
     cloudCount = player.clouds.length
 
   if (cloudCount == 0 || player.cloudSeed < distance / w) {
@@ -17,7 +17,7 @@ export var spawnCloudAndCans = (player, w, h, distance) => {
 
     if (spawnCan) {
       // Spawn random jerry can
-      if (!canImg) canImg = getImg('./resources/etc/jerrycan.png')
+      if (!canImg) canImg = getImg('https://storage.googleapis.com/webbiker_bucket/etc/jerrycan.png')
 
       player.jerryCans[canCount] = new GameObject(false, canImg, 0, w, random(0, h / 3), 30, 30)
       canCount += 1
@@ -28,21 +28,21 @@ export var spawnCloudAndCans = (player, w, h, distance) => {
 
     if (spawnCloud) {
       // Generate random cloud
-      var type = Math.round(Math.random())
+      let type = Math.round(Math.random())
 
       // Check if img is cached
-      var cimg = cloudImgs.get(type)
+      let cimg = cloudImgs.get(type)
 
       if (!cimg) {
         // Not cached, load & cache
-        cimg = getImg('./resources/etc/cloud_' + type + '.png')
+        cimg = getImg('https://storage.googleapis.com/webbiker_bucket/etc/cloud_' + type + '.png')
         cloudImgs.set(type, cimg)
       }
 
-      var cWidth = random(0, 100) + 50,
+      let cWidth = random(0, 100) + 50,
         cHeight = random(0, 25) + 25
 
-      var cloudY = random(random(-25, 0), distance > 0 ? 100 : 25)
+      let cloudY = random(random(-25, 0), distance > 0 ? 100 : 25)
 
       player.clouds[cloudCount] = new GameObject(true, cimg, random(3, 12) / 100, w, cloudY, cWidth, cHeight)
       cloudCount += 1
@@ -51,30 +51,31 @@ export var spawnCloudAndCans = (player, w, h, distance) => {
 }
 
 // Terrain generation
-var perm = []
+let perm = []
 while (perm.length < 255) {
-  var val
+  let val
   while (perm.includes((val = Math.floor(Math.random() * 255))));
   perm.push(val)
 }
 
-var lerp = (a, b, t) => a + ((b - a) * (1 - Math.cos(t * Math.PI))) / 2
+let lerp = (a, b, t) => a + ((b - a) * (1 - Math.cos(t * Math.PI))) / 2
 
-export var noise = x => {
+export let noise = x => {
   x = (x * 0.01) % 255
   return lerp(perm[Math.floor(x)], perm[Math.ceil(x)], x - Math.floor(x))
 }
 
-export var fillTerrain = (player, multiplier, w, h, ctx) => {
+export let fillTerrain = (player, multiplier, w, h, ctx) => {
   ctx.beginPath()
   ctx.moveTo(0, h)
+  ctx.fillStyle = 'black'
 
   // Generate terrain
   for (let drawX = 0; drawX < w; drawX++) {
     const disX = player.traveledDistance + drawX
     const doff = disX - player.x
 
-    var seed = doff < w ? h * 0.25 : -1
+    let seed = doff < w ? h * 0.4 : -1
 
     if (seed == -1) {
       seed = h - noise(disX) * (0.25 * (multiplier < 1 ? 1 : multiplier))
@@ -89,11 +90,12 @@ export var fillTerrain = (player, multiplier, w, h, ctx) => {
   ctx.fill()
 }
 
-export var fillFX = (player, ctx) => {
+export let fillFX = (player, ctx) => {
   const popSize = player.popups.length,
     debSize = player.debris.length
 
   const amountToDraw = popSize + debSize
+  ctx.font = '18px Verdana'
   ctx.fillStyle = 'black'
 
   for (let toDraw = 0; toDraw < amountToDraw; toDraw++) {
@@ -143,14 +145,14 @@ export var fillFX = (player, ctx) => {
   }
 }
 
-export var fillObjects = (player, controlDiagrams, ctx) => {
-  var diagrams = controlDiagrams.length,
+export let fillObjects = (player, controlDiagrams, ctx) => {
+  let diagrams = controlDiagrams.length,
     canCount = player.jerryCans.length,
     cloudCount = player.clouds.length
 
-  var objsToDraw = diagrams + cloudCount + canCount
+  let objsToDraw = diagrams + cloudCount + canCount
 
-  for (var toDraw = 0; toDraw < objsToDraw; toDraw++) {
+  for (let toDraw = 0; toDraw < objsToDraw; toDraw++) {
     const drawingDiagrams = diagrams > 0 && toDraw < diagrams
     const drawingClouds = cloudCount > 0 && toDraw - diagrams < cloudCount
 
@@ -176,6 +178,10 @@ export var fillObjects = (player, controlDiagrams, ctx) => {
 
     // width == 60 is audio diagram, jerry cans width are 30
     gameObject.x -= (player.xSpeed + gameObject.speed) * (gameObject.cloud ? 2.5 : gameObject.w == 60 ? 6 : 4)
-    ctx.drawImage(gameObject.img, gameObject.x, gameObject.y, gameObject.w, gameObject.h)
+
+    if (gameObject.img.complete) ctx.drawImage(gameObject.img, gameObject.x, gameObject.y, gameObject.w, gameObject.h)
+    else
+      gameObject.img.onload = () =>
+        ctx.drawImage(gameObject.img, gameObject.x, gameObject.y, gameObject.w, gameObject.h)
   }
 }
