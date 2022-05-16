@@ -187,7 +187,7 @@ const App = () => {
 
   bindBtnActions()
 
-  let render = () => {
+  let render = (updatePlayer) => {
     // Canvas background
     ctx.fillStyle = gradient
     ctx.fillRect(0, 0, width, height)
@@ -222,6 +222,7 @@ const App = () => {
     World.fillFX(player, ctx)
 
     // Draw player/update position/etc
+    if (updatePlayer)
     player.update(ctx)
 
     // Draw controls (mobile)
@@ -257,7 +258,7 @@ const App = () => {
 
     // Render scene
     // Drop extra frames
-    if (frames < 61) render()
+    if (frames < 61) render(true)
 
     // Count fps
     let now = performance.now()
@@ -284,7 +285,7 @@ const App = () => {
   if (paused) {
     // Mobile - page loaded in portrait
   } else {
-    requestAnimationFrame(render)
+    requestAnimationFrame(() => render(false))
     // Slide-in canvas while detecting framerate
     canvas.style.bottom = height * 2 + 'px'
     canvas.style.transition = 'bottom 0.6s linear'
