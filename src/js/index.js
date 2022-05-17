@@ -48,7 +48,7 @@ const App = () => {
   let player = new Player(controls, width, height)
   controls.player = player
 
-  let [controlDiagrams, positions] = Diagrams.init(player, usingMobile, width, height)
+  let [controlDiagrams, positions] = Diagrams.init(player, usingMobile, width, height, ctx)
   controls.audio_btn = controlDiagrams[0]
   controls.up_pos = positions[0]
   controls.down_pos = positions[1]
@@ -143,7 +143,7 @@ const App = () => {
     controls.player = player
 
     // Re-add control diagram/audio toggle
-    let [cd, ignored] = Diagrams.init(player, usingMobile, width, height)
+    let [cd, ignored] = Diagrams.init(player, usingMobile, width, height, ctx)
     controlDiagrams = cd
     controls.audio_btn = controlDiagrams[0]
 
@@ -187,7 +187,7 @@ const App = () => {
 
   bindBtnActions()
 
-  let render = (updatePlayer) => {
+  let render = updatePlayer => {
     // Canvas background
     ctx.fillStyle = gradient
     ctx.fillRect(0, 0, width, height)
@@ -222,8 +222,7 @@ const App = () => {
     World.fillFX(player, ctx)
 
     // Draw player/update position/etc
-    if (updatePlayer)
-    player.update(ctx)
+    if (updatePlayer) player.update(ctx)
 
     // Draw controls (mobile)
     if (usingMobile) Diagrams.drawMobileControls(ctx)

@@ -24,7 +24,8 @@ let initMobile = (w, h) => {
   if (!rightImg) rightImg = getImg('https://storage.googleapis.com/webbiker_bucket/controls/mobile_right.png')
 }
 
-export let init = (player, usingMobile, w, h) => {
+export let init = (player, usingMobile, w, h, ctx) => {
+  console.log(w + ', ' + h)
   // Control info diagrams
   let controlDiagrams = new Array()
 
@@ -40,13 +41,15 @@ export let init = (player, usingMobile, w, h) => {
     controlDiagrams[1] = new GameObject(false, keysImg, 0, w / 4 - 100, h - h / 2, 200, 200)
   }
 
-  // Show trick-tip info popup
-  player.popups[0] = new Popup(
-    (usingMobile ? 'Double-tap and Hold' : 'Hold Spacebar') + ' in the air for extra points!',
-    w / 4,
-    115
-  )
+  // NOTE: c2d#measureText returns value based on font set to canvas
+  ctx.font = '18px Verdana'
 
+  // Info txt/dimensions
+  let info = (usingMobile ? 'Double-tap and Hold' : 'Hold Spacebar') + ' in the air for extra points!'
+  let infoWidth = ctx.measureText(info).width
+
+  // Show trick-tip info popup
+  player.popups[0] = new Popup(info, w / 2 - infoWidth / 2, h / 5)
   return [controlDiagrams, [upPos, downPos, leftPos, rightPos]]
 }
 
