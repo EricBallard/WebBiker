@@ -1,13 +1,15 @@
-# WebBiker
-Ride the gnar with WebBiker, a procedurally generated 2D motocross game supporting desktop and mobile!
 
-### Live Demo: https://WebBiker.tk
+<p align="center">
+  <img src="/media/lamp_stack_logo.png" width="400" height="200">
+</p>
 
-  
-![LAMP](/media/lamp_stack_logo.png)
-  
-***Built on the LAMP stack***
+<p align="center">
+  Ride the gnar with WebBiker, a procedurally generated 2D motocross game supporting desktop and mobile!
+</p>
 
+<p align="center">
+  <b>Live Demo: </b><a href="https://WebBiker.tk">https://WebBiker.tk</a>
+</p>
 
 ## Features
 - Cross-platform, PC & Mobile friendly
@@ -25,6 +27,4 @@ when requesting to submit a new score, integrity is
 verified server sided via PHP session.
 
 ## Gameplay
-![PC](/media/pc_demo.gif)
-  
 ![Mobile](/media/mobile_demo.gif)
