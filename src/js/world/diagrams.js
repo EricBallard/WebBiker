@@ -18,10 +18,10 @@ let initMobile = (w, h) => {
   upPos = new Position(w - 75, leftPos.y)
 
   // Cache images for control buttons
-  if (!upImg) upImg = getImg('https://storage.googleapis.com/webbiker_bucket/controls/mobile_up.png')
-  if (!downImg) downImg = getImg('https://storage.googleapis.com/webbiker_bucket/controls/mobile_down.png')
-  if (!leftImg) leftImg = getImg('https://storage.googleapis.com/webbiker_bucket/controls/mobile_left.png')
-  if (!rightImg) rightImg = getImg('https://storage.googleapis.com/webbiker_bucket/controls/mobile_right.png')
+  if (!upImg) upImg = getImg('https://www.dropbox.com/s/nty98mddjrlyvix/mobile_up.png?raw=1')
+  if (!downImg) downImg = getImg('https://www.dropbox.com/s/uyqtefbfr9ggfky/mobile_down.png?raw=1')
+  if (!leftImg) leftImg = getImg('https://www.dropbox.com/s/eo08nfwdemqroy3/mobile_left.png?raw=1')
+  if (!rightImg) rightImg = getImg('https://www.dropbox.com/s/2etcrauhjzq6s8k/mobile_right.png?raw=1')
 }
 
 export let init = (player, usingMobile, w, h, ctx) => {
@@ -30,14 +30,14 @@ export let init = (player, usingMobile, w, h, ctx) => {
   let controlDiagrams = new Array()
 
   // Toggle Audio button
-  if (!audioImg) audioImg = getImg('https://storage.googleapis.com/webbiker_bucket/controls/audio_on.png')
+  if (!audioImg) audioImg = getImg('https://www.dropbox.com/s/qjyy42gz1xbhdev/audio_on.png?raw=1')
   controlDiagrams[0] = new GameObject(false, audioImg, 0, w - 200, h / 2, 60, 60)
 
   // Spawn MOBILE control buttons
   if (usingMobile) initMobile(w, h)
   else {
     // Spawn PC control info
-    if (!keysImg) keysImg = getImg('https://storage.googleapis.com/webbiker_bucket/controls/pc_controls.png')
+    if (!keysImg) keysImg = getImg('https://www.dropbox.com/s/c95jsu398egat3p/pc_controls.png?raw=1')
     controlDiagrams[1] = new GameObject(false, keysImg, 0, w / 4 - 100, h - h / 2, 200, 200)
   }
 

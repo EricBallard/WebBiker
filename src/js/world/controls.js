@@ -187,7 +187,10 @@ function click(evt, down) {
           controls.sfx.pause()
         } else controls.audio.play()
 
-        controls.audio_btn.img.src = 'https://storage.googleapis.com/webbiker_bucket/controls/audio_' + (controls.muteAudio ? 'off' : 'on') + '.png'
+        if (controls.muteAudio)
+          controls.audio_btn.img.src = 'https://www.dropbox.com/s/qjyy42gz1xbhdev/audio_on.png?raw=1'
+        else
+          controls.audio_btn.img.src ='https://www.dropbox.com/s/jo3p2xpa77n2kq0/audio_off.png?raw=1'
         break
       case 'UP':
         accelerate(down ? 1 : 0)
