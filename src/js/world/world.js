@@ -17,7 +17,7 @@ export let spawnCloudAndCans = (player, w, h, distance) => {
 
     if (spawnCan) {
       // Spawn random jerry can
-      if (!canImg) canImg = getImg('https://www.dropbox.com/s/sgxobv22b4hcaur/jerrycan.png?raw=1')
+      if (!canImg) canImg = getImg('./resources/etc/jerrycan.png')
 
       player.jerryCans[canCount] = new GameObject(false, canImg, 0, w, random(0, h / 3), 30, 30)
       canCount += 1
@@ -35,7 +35,7 @@ export let spawnCloudAndCans = (player, w, h, distance) => {
 
       if (!cimg) {
         // Not cached, load & cache
-        cimg = getImg(type === 0 ? 'https://www.dropbox.com/s/e4rnp4bjnzfhey6/cloud_0.png?raw=1' : 'https://www.dropbox.com/s/gkhv9vjp52hbs7u/cloud_1.png?raw=1')
+        cimg = getImg('./resources/etc/cloud_' + type + '.png')
         cloudImgs.set(type, cimg)
       }
 

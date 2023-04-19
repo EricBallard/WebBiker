@@ -187,10 +187,7 @@ function click(evt, down) {
           controls.sfx.pause()
         } else controls.audio.play()
 
-        if (controls.muteAudio)
-          controls.audio_btn.img.src = 'https://www.dropbox.com/s/qjyy42gz1xbhdev/audio_on.png?raw=1'
-        else
-          controls.audio_btn.img.src ='https://www.dropbox.com/s/jo3p2xpa77n2kq0/audio_off.png?raw=1'
+        controls.audio_btn.img.src = './resources/controls/' + (controls.muteAudio ? 'audio_on.png' : 'audio_off.png')
         break
       case 'UP':
         accelerate(down ? 1 : 0)

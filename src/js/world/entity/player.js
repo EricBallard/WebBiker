@@ -10,8 +10,8 @@ export class Player {
 
       // Player image
       ; (this.imgBiker = null), (this.backdrop = new Image()), (this.img = new Image())
-    this.backdrop.src = 'https://www.dropbox.com/s/a0tiw2g9izjpsb2/highlight_drop.png?raw=1'
-    this.img.src = 'https://www.dropbox.com/s/vsbyrpokc3jppyb/biker.png?raw=1'
+    this.backdrop.src = './resources/etc/highlight_drop.png'
+    this.img.src = './resources/biker/biker.png'
       ; (this.canvasW = w), (this.canvasH = h)
       ; (this.w = 30), (this.h = 30)
 
@@ -85,7 +85,7 @@ export class Player {
           crashed = true
         } else if (this.controls.trick == 0) {
           ; (this.w = 30), (this.h = 30)
-          this.img.src = 'https://www.dropbox.com/s/vsbyrpokc3jppyb/biker.png?raw=1'
+          this.img.src = './resources/biker/biker.png'
           this.doingTrick = false
         } else {
           // Hold trick for points
@@ -102,7 +102,7 @@ export class Player {
       } else if (!this.grounded) {
         if (this.controls.trick == 1) {
           ; (this.w = 33), (this.h = 33)
-          this.img.src = 'https://www.dropbox.com/s/iu640jx2sfpixiz/biker_trick.png?raw=1'
+          this.img.src = './resources/biker/biker_trick.png'
           this.doingTrick = true
           this.trickCounter = 0
         }
@@ -162,13 +162,13 @@ export class Player {
 
         if (!outOfGas) {
           // Split rider/bike sprite into 2 for crash animation
-          this.img.src = 'https://www.dropbox.com/s/28m8w0rb7afiotb/bike_alacarte.png?'
+          this.img.src = './resources/biker/bike_alacarte.png'
 
           // Pick random fall image
           this.imgBiker = new Image()
           this.imgBiker.src = (Math.round(Math.random()) === 1 ?
-            'https://www.dropbox.com/s/xj8r8aj4ufdtlms/biker_fall_1.png?raw=1' :
-            'https://www.dropbox.com/s/owjdp0d0ufnl5yg/biker_fall_0.png?raw=1')
+            './resources/biker/biker_fall_1.png' :
+            './resources/biker/biker_fall_0.png')
 
           // Determine which side to draw player on relavent to rotation
           this.crashOffset = this.rotation > 0.5 ? 10 : -10
@@ -260,11 +260,11 @@ export class Player {
     if (flyingHigh) {
       if (this.doingTrick) {
         if (!this.img.src.includes('biker_trick_highlight.png')) {
-          this.img.src = 'https://www.dropbox.com/s/q86115rovh7bol5/biker_trick_highlight.png?raw=1'
+          this.img.src = './resources/biker/biker_trick_highlight.png'
         }
       } else {
         if (!this.img.src.includes('biker_highlight.png')) {
-          this.img.src = 'https://www.dropbox.com/s/t23sedhe2f14cym/biker_highlight.png?raw=1'
+          this.img.src = './resources/biker/biker_highlight.png'
         }
       }
 
@@ -281,7 +281,7 @@ export class Player {
       //TODO
     } else {
       if (!this.doingTrick && !this.img.src.includes('biker.png'))
-        this.img.src = 'https://www.dropbox.com/s/vsbyrpokc3jppyb/biker.png?raw=1'
+        this.img.src = './resources/biker/biker.png'
 
       ctx.translate(this.x, this.y)
     }

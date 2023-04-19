@@ -27,10 +27,7 @@ set_time_limit(2);
 
 // Create connection
 $dbc = new mysqli(
-    getenv("mysql_host"),
-    getenv("mysql_user"),
-    getenv("mysql_pass"),
-    getenv("mysql_db")
+    $_SERVER["mysql_host"],  $_SERVER["mysql_user"],   $_SERVER["mysql_pass"],  $_SERVER["mysql_db"]
 );
 
 // Check connection
