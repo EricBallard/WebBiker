@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <b>Live Demo: </b><a href="https://WebBiker.tk">https://WebBiker.tk</a>
+  <b>Live Demo: </b><a href="https://WebBiker.tk">https://ericballard.info/webbiker/</a>
 </p>
 
 ## Features
