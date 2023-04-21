@@ -6,7 +6,8 @@ session_start();
 
 // Validate parameters
 if (!isset($_GET['initials']) || !isset($_GET['score']) || !isset($_GET['auth'])) {
-    //$dbc->close();
+    session_destroy();
+    $dbc->close();
     die();
 }
 

@@ -5,8 +5,8 @@ export let random = (min, max) => {
 export let isBot = () => {
   return (
     navigator.webdriver ||
-    window.innerWidth < 400 ||
-    window.innerHeight < 400 ||
+    window.innerWidth < 200 ||
+    window.innerHeight < 200 ||
     /bot|googlebot|crawler|spider|robot|curl|crawling/i.test(navigator.userAgent)
   )
 }
